@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Survey {
+  id        String   @id // e.g. "encontronacionaldafe2026"
+  title     String
+  status    String   @default("Rascunho")
+  config    String   // JSON string of sections/questions
+  createdAt DateTime @default(now())
+
+  responses Response[]
+}
+
+model Response {
+  id        String   @id @default(cuid())
+  surveyId  String
+  survey    Survey   @relation(fields: [surveyId], references: [id])
+  answers   String   // JSON string { questionId: answerText }
+  createdAt DateTime @default(now())
+}

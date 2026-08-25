@@ -1,0 +1,757 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { surveyData } from '../../../data/questions';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
+  PieChart, Pie, Cell
+} from 'recharts';
+import { ArrowLeft, Users, Star, ArrowUpRight, Clock, MessageSquare, Menu, LayoutDashboard, CheckSquare, List, MessageCircleQuestion, Sparkles, Printer, FileDown, Settings, Edit, Trash2, Plus, GripVertical } from 'lucide-react';
+import Link from 'next/link';
+
+// Mock data: KPI and Charts
+const overallRatingData = [
+  { name: '1 - Muito ruim', count: 5 },
+  { name: '2 - Ruim', count: 12 },
+  { name: '3 - Regular', count: 45 },
+  { name: '4 - Bom', count: 150 },
+  { name: '5 - Excelente', count: 312 },
+];
+const expectationData = [
+  { name: 'Ficou muito abaixo', value: 10 },
+  { name: 'Ficou abaixo', value: 20 },
+  { name: 'Atendeu', value: 100 },
+  { name: 'Superou', value: 180 },
+  { name: 'Superou muito', value: 214 },
+];
+
+// Mock data: Action Plan
+const actionPlan = [
+  { id: 1, category: 'Alimentação', action: 'Aumentar número de pontos de distribuição de almoço no sábado', duplicateCount: 45 },
+  { id: 2, category: 'Workshops', action: 'Aumentar a duração dos workshops principais (ex: liderança) em 30 minutos', duplicateCount: 32 },
+  { id: 3, category: 'Credenciamento', action: 'Criar fila exclusiva e antecipada para caravanas com mais de 20 pessoas', duplicateCount: 28 },
+  { id: 4, category: 'Estrutura', action: 'Instalar mais pontos de hidratação (bebedouros) perto do palco principal', duplicateCount: 21 },
+  { id: 5, category: 'Comunicação', action: 'Enviar mapa do evento e horários por WhatsApp 2 dias antes do evento', duplicateCount: 15 },
+];
+
+// Mock data: All Responses (General)
+const allResponses = [
+  { id: '#001', date: '25/08/26 09:10', rating: 5, nps: 10, feedback: 'O momento da missão foi incrível! Achei apenas que a fila do almoço demorou muito no sábado, poderiam ter mais pontos.' },
+  { id: '#002', date: '25/08/26 09:05', rating: 4, nps: 8, feedback: 'Gostei muito dos workshops, mas achei o tempo curto para o palestrante aprofundar.' },
+  { id: '#003', date: '25/08/26 08:50', rating: 5, nps: 10, feedback: 'Melhor encontro que já participei! Organização impecável. Sugiro apenas um bebedouro mais perto do palco.' },
+  { id: '#004', date: '25/08/26 08:45', rating: 3, nps: 6, feedback: 'O credenciamento da nossa caravana atrasou, ficamos 40 minutos na fila. O resto foi muito bom.' },
+  { id: '#005', date: '25/08/26 08:30', rating: 5, nps: 9, feedback: 'Que Deus abençoe vocês. Sugiro mandar os horários detalhados no WhatsApp, ajudaria muito.' },
+];
+
+
+const satisfactionByArea = [
+  { area: 'Organização', score: 4.8 },
+  { area: 'Credenciamento', score: 3.5 },
+  { area: 'Workshops', score: 4.6 },
+  { area: 'Feira', score: 4.2 },
+  { area: 'Missão', score: 4.9 },
+  { area: 'Alimentação', score: 3.2 },
+  { area: 'Infraestrutura', score: 4.5 }
+];
+
+// Mock data: Questions Analysis (New Feature)
+const openQuestionsData = [
+  { id: 11, title: 'O que poderíamos melhorar no credenciamento e na recepção?', summary: 'A maioria elogiou a recepção. No entanto, relataram lentidão no credenciamento de grandes caravanas.', individualAnswers: [{ id: '#004', text: 'O credenciamento da nossa caravana atrasou bastante. Tinha pouca gente atendendo o grupo grande.' }, { id: '#045', text: 'A fila do QR Code estava travando sem internet, coloquem Wi-Fi liberado na entrada.' }] },
+  { id: 17, title: 'Qual foi o momento ou atividade que mais marcou você durante o evento?', summary: 'A "Missão na sexta-feira à tarde" e o "Louvor de encerramento no sábado" foram os momentos mais citados de longe.', individualAnswers: [{ id: '#001', text: 'Com certeza o momento da missão nas ruas. Ver a alegria das pessoas ao receberem uma oração mudou minha perspectiva.' }, { id: '#033', text: 'O louvor de sábado à noite. A atmosfera estava indescritível, chorei do início ao fim.' }] },
+  { id: 18, title: 'Que tema, atividade ou formato você gostaria de ver em uma próxima edição?', summary: 'Muitos pediram mais temas focados em tecnologia e juventude na igreja.', individualAnswers: [{ id: '#015', text: 'Gostaria de oficinas mais práticas sobre uso de redes sociais.' }, { id: '#019', text: 'Mais workshops sobre missões transculturais.' }] },
+  { id: 25, title: 'Qual workshop ou tema mais contribuiu para você? Por quê?', summary: 'O workshop de liderança servil foi o mais citado, devido à praticidade das lições.', individualAnswers: [{ id: '#022', text: 'O de liderança foi um divisor de águas.' }] },
+  { id: 26, title: 'O que você mudaria ou melhoraria nos workshops para uma próxima edição?', summary: 'Tempo maior para perguntas e respostas no final das sessões.', individualAnswers: [{ id: '#089', text: 'Queria que tivesse uns 15 minutos finais só pra tirar dúvidas.' }] },
+  { id: 33, title: 'O que você mais gostou na Feira dos Ministérios?', summary: 'A diversidade de projetos sociais e o networking com pessoas de diferentes estados.', individualAnswers: [{ id: '#041', text: 'Gostei de conhecer projetos do nordeste.' }] },
+  { id: 34, title: 'O que poderia ser melhorado na Feira dos Ministérios?', summary: 'A organização do espaço, pois os corredores ficaram muito apertados em horários de pico.', individualAnswers: [{ id: '#112', text: 'Os stands estavam muito juntos, mal dava para andar.' }] },
+  { id: 38, title: 'Que tipo de experiência ou interação com patrocinadores você gostaria de encontrar em uma próxima edição?', summary: 'Brindes mais interativos, totens de fotos e sorteios durante a plenária.', individualAnswers: [{ id: '#009', text: 'Sorteios de livros dos patrocinadores.' }] },
+  { id: 44, title: 'O que mais marcou você na experiência da missão?', summary: 'O sentimento de ver a reação das pessoas nas ruas e a união do grupo.', individualAnswers: [{ id: '#033', text: 'Orar por pessoas que não conhecíamos.' }] },
+  { id: 45, title: 'O que poderia ser melhorado na missão?', summary: 'Um pouco mais de tempo, pois foi muito corrido na hora de voltar ao local.', individualAnswers: [{ id: '#099', text: 'Tivemos pouco tempo para conversar mais a fundo com as pessoas.' }] },
+  { id: 52, title: 'O que você sugere que seja diferente na alimentação de uma próxima edição?', summary: 'Aumentar os caixas e distribuir melhor os horários para evitar longas filas.', individualAnswers: [{ id: '#001', text: 'As filas do almoço demoraram muito.' }] },
+  { id: 53, title: 'O que você mais gostou no Encontro Nacional da FE 2026?', summary: 'O louvor intenso e a oportunidade de reconectar com a visão do ministério.', individualAnswers: [{ id: '#056', text: 'O agir de Deus nos louvores.' }] },
+  { id: 54, title: 'Qual foi o momento mais marcante para você durante o evento?', summary: 'O culto de sábado à noite e a oração coletiva.', individualAnswers: [{ id: '#102', text: 'O encerramento no sábado de noite.' }] },
+  { id: 55, title: 'O evento trouxe algum aprendizado, inspiração ou conexão que você pretende levar para sua vida ou ministério?', summary: 'Muitas ideias práticas da Feira dos Ministérios para aplicar na igreja local.', individualAnswers: [{ id: '#044', text: 'Sim, vou implementar o projeto infantil que vi no stand X.' }] },
+  { id: 58, title: 'Se você pudesse mudar apenas uma coisa no Encontro Nacional da FE, o que mudaria?', summary: 'Aumentaria um dia de evento.', individualAnswers: [{ id: '#002', text: 'Gostaria que durasse até domingo à noite.' }] },
+  { id: 59, title: 'O que NÃO podemos deixar de fazer em uma próxima edição?', summary: 'A missão evangelística prática na sexta-feira.', individualAnswers: [{ id: '#077', text: 'Continuem fazendo a missão na sexta!' }] },
+  { id: 60, title: 'Que sugestão você daria para que o próximo Encontro Nacional da FE seja ainda melhor?', summary: 'Realizar o evento num espaço um pouco maior e com mais banheiros.', individualAnswers: [{ id: '#013', text: 'Mais banheiros disponíveis perto da plenária.' }] },
+  { id: 61, title: 'Existe algo que não perguntamos nesta pesquisa e que você gostaria de compartilhar conosco?', summary: 'Muitos usaram este espaço apenas para agradecer e parabenizar a equipe.', individualAnswers: [{ id: '#091', text: 'Obrigado por tudo, vocês foram incríveis!' }] }
+];
+const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6'];
+const PIE_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316'];
+
+export default function DashboardPage() {
+  const params = useParams();
+  const slug = params?.slug || '';
+  const eventTitle = slug.includes('curitiba') ? 'ERFE Curitiba' : slug.includes('lideranca') ? 'Liderança Jovem 26' : 'Encontro Nacional da FE 2026';
+  const [activeTab, setActiveTab] = useState<'overview' | 'actions' | 'responses' | 'analysis' | 'config'>('overview');
+  
+  const [sectionsList, setSectionsList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/surveys/${slug}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.config) {
+          setSectionsList(data.config);
+        }
+        setIsLoading(false);
+      });
+  }, [slug]);
+
+  const saveToDb = async (newSections) => {
+    await fetch(`/api/surveys/${slug}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ config: newSections })
+    });
+  };
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState<any>(null);
+  const [currentSectionId, setCurrentSectionId] = useState<number | null>(null);
+
+  const handleSaveQuestion = () => {
+    // Basic mock implementation for saving a question
+    setIsModalOpen(false);
+    
+    // Create mock new question
+    const newQuestion = {
+      id: Date.now(),
+      text: 'Nova pergunta adicionada...',
+      type: 'paragraph',
+    };
+
+    setSectionsList(prev => {
+      const newSections = prev.map(section => {
+      if (section.id === currentSectionId) {
+        // If editing existing
+        if (currentQuestion) {
+           return { ...section, questions: section.questions.map(q => q.id === currentQuestion.id ? { ...q, text: 'Pergunta editada...' } : q) };
+        }
+        // If adding new
+        return { ...section, questions: [...section.questions, newQuestion] };
+      }
+      return section;
+      });
+      saveToDb(newSections);
+      return newSections;
+    });
+  };
+
+  const handleAddTopic = () => {
+    const newSection = {
+      id: Date.now(),
+      title: 'Novo Tópico',
+      description: 'Descrição do novo tópico',
+      questions: []
+    };
+    const newSections = [...sectionsList, newSection];
+    setSectionsList(newSections);
+    saveToDb(newSections);
+  };
+
+  const [selectedQuestionId, setSelectedQuestionId] = useState(openQuestionsData[0].id);
+
+  const selectedQuestion = openQuestionsData.find(q => q.id === selectedQuestionId);
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex print:bg-white print:block" style={{WebkitPrintColorAdjust: "exact", printColorAdjust: "exact"}}>
+      {/* Sidebar - desktop */}
+      <aside className="hidden md:flex flex-col w-64 bg-slate-900 text-white min-h-screen print:hidden">
+        <div className="p-6 border-b border-slate-800">
+          <h1 className="font-bold text-xl flex items-center gap-2">
+            <LayoutDashboard className="text-blue-400" />
+            Painel ENF 26
+          </h1>
+        </div>
+        <nav className="flex-1 p-4 flex flex-col gap-2">
+          <button 
+            onClick={() => setActiveTab('overview')}
+            className={`flex items-center justify-start gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === 'overview' ? 'bg-blue-600/20 text-blue-400' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          >
+            <LayoutDashboard size={20} /> Visão Geral
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('analysis')}
+            className={`flex items-center justify-start gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === 'analysis' ? 'bg-blue-600/20 text-blue-400' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          >
+            <MessageCircleQuestion size={20} /> Análise por Pergunta
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('actions')}
+            className={`flex items-center justify-start gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === 'actions' ? 'bg-blue-600/20 text-blue-400' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          >
+            <CheckSquare size={20} /> Plano de Ação (Geral)
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('config')}
+            className={`flex items-center justify-start gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === 'config' ? 'bg-blue-600/20 text-blue-400' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          >
+            <Settings size={20} /> Configurar Pesquisa
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('responses')}
+            className={`flex items-center justify-start gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === 'responses' ? 'bg-blue-600/20 text-blue-400' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          >
+            <List size={20} /> Respostas Brutas
+          </button>
+        </nav>
+        
+        {/* Back button */}
+        <div className="p-4 border-t border-slate-800">
+          <Link href="/dashboard" className="flex justify-center items-center gap-2 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors py-3 px-4 rounded-xl font-bold shadow-sm">
+            <ArrowLeft size={18} /> Voltar ao Início
+          </Link>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col max-w-full overflow-visible print:overflow-visible print:block">
+        <header className="bg-white p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center print:hidden">
+          <div className="md:hidden flex items-center gap-4">
+            <button className="text-gray-600"><Menu /></button>
+            <h1 className="font-bold text-lg">{eventTitle}</h1>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 hidden md:block">
+            {activeTab === 'overview' && 'Visão Geral - Pesquisa de Satisfação'}
+            {activeTab === 'analysis' && 'Análise de Perguntas Abertas'}
+            {activeTab === 'actions' && 'Relatório: Sugestões Filtradas'}
+            {activeTab === 'responses' && 'Todas as Respostas Brutas'}
+            {activeTab === 'config' && 'Configuração do Questionário'}
+          </h2>
+          <div className="flex items-center gap-3">
+             <span className="text-sm text-gray-500 font-medium hidden sm:inline">Última atualização: hoje, 09:37</span>
+             <button className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center gap-2">
+                <FileDown size={16} /> CSV
+             </button>
+             <button onClick={() => window.print()} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center gap-2">
+                <Printer size={16} /> Gerar PDF
+             </button>
+          </div>
+        </header>
+
+        <div className="p-4 sm:p-6 lg:p-8 overflow-y-auto print:p-0 print:overflow-visible print:h-auto print:w-full">
+          
+          {/* Print only Header */}
+          <div className="hidden print:block mb-8 border-b border-gray-200 pb-4">
+            <h1 className="text-3xl font-bold text-gray-900">Relatório de Satisfação</h1>
+            <h2 className="text-xl text-gray-600 mt-1">{eventTitle}</h2>
+            <p className="text-sm text-gray-500 mt-2">Gerado em: {new Date().toLocaleDateString('pt-BR')} - Confidencial para Diretoria</p>
+          </div>
+          
+          {/* TAB: OVERVIEW */}
+          {activeTab === 'overview' && (
+            <>
+              {/* KPI Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 print:break-inside-avoid">
+                  <div className="flex items-center justify-between text-gray-500">
+                    <span className="font-medium">Total de Respostas</span>
+                    <Users size={20} className="text-blue-500" />
+                  </div>
+                  <div className="text-3xl font-bold text-gray-800">524</div>
+                  <div className="text-sm text-green-600 flex items-center gap-1 font-medium mt-1">
+                    <ArrowUpRight size={16} /> +12% esta semana
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 print:break-inside-avoid">
+                  <div className="flex items-center justify-between text-gray-500">
+                    <span className="font-medium">Nota Geral (Média)</span>
+                    <Star size={20} className="text-yellow-500" />
+                  </div>
+                  <div className="text-3xl font-bold text-gray-800">4.5<span className="text-lg text-gray-400 font-normal">/5</span></div>
+                  <div className="text-sm text-gray-500 mt-1">Baseado na pergunta 3</div>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 print:break-inside-avoid">
+                  <div className="flex items-center justify-between text-gray-500">
+                    <span className="font-medium">NPS (Net Promoter Score)</span>
+                    <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold text-xs">NPS</div>
+                  </div>
+                  <div className="text-3xl font-bold text-gray-800">72</div>
+                  <div className="text-sm text-green-600 mt-1 font-medium">Zona de Excelência</div>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 print:break-inside-avoid">
+                  <div className="flex items-center justify-between text-gray-500">
+                    <span className="font-medium">Tempo Médio Resposta</span>
+                    <Clock size={20} className="text-purple-500" />
+                  </div>
+                  <div className="text-3xl font-bold text-gray-800">4m 12s</div>
+                  <div className="text-sm text-gray-500 mt-1">Formulário otimizado</div>
+                </div>
+              </div>
+
+              {/* Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 print:break-inside-avoid print:mb-8">
+                  <h3 className="text-lg font-bold text-gray-800 mb-6">Avaliação Geral do Evento</h3>
+                  <div className="h-72 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={overallRatingData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="name" tick={{fill: '#64748b', fontSize: 12}} axisLine={false} tickLine={false} />
+                        <YAxis tick={{fill: '#64748b', fontSize: 12}} axisLine={false} tickLine={false} />
+                        <RechartsTooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                        <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                          {overallRatingData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 print:break-inside-avoid print:mb-8">
+                  <h3 className="text-lg font-bold text-gray-800 mb-6">Expectativas vs Realidade</h3>
+                  <div className="h-72 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={expectationData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={80}
+                          outerRadius={110}
+                          paddingAngle={2}
+                          dataKey="value"
+                        >
+                          {expectationData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-4 mt-2">
+                    {expectationData.map((entry, index) => (
+                      <div key={entry.name} className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="w-3 h-3 rounded-full" style={{backgroundColor: PIE_COLORS[index % PIE_COLORS.length]}}></div>
+                        {entry.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 2: Satisfaction by Area & Executive Summary */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 mt-8">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 print:break-inside-avoid">
+                  <h3 className="text-lg font-bold text-gray-800 mb-6">Níveis de Satisfação por Área (Média 1-5)</h3>
+                  <div className="h-72 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart layout="vertical" data={satisfactionByArea} margin={{ top: 0, right: 30, left: 20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                        <XAxis type="number" domain={[0, 5]} tick={{fill: '#64748b', fontSize: 12}} axisLine={false} tickLine={false} />
+                        <YAxis dataKey="area" type="category" tick={{fill: '#475569', fontSize: 13, fontWeight: 500}} axisLine={false} tickLine={false} width={110} />
+                        <RechartsTooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                        <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={24}>
+                          {satisfactionByArea.map((entry, index) => (
+                            <Cell key={`cell-sat-${index}`} fill={entry.score >= 4.5 ? '#22c55e' : entry.score >= 4.0 ? '#3b82f6' : entry.score > 3.5 ? '#eab308' : '#ef4444'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-2xl shadow-sm border border-blue-100 print:break-inside-avoid flex flex-col">
+                  <h3 className="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
+                    <Sparkles className="text-blue-600" size={20} />
+                    Resumo Executivo (IA)
+                  </h3>
+                  <div className="text-blue-900/90 leading-relaxed text-[15px] flex-1 space-y-4">
+                    <p>
+                      <strong>Pontos Fortes:</strong> O Encontro foi amplamente elogiado por seu <strong>profundo impacto espiritual</strong>, com destaque absoluto para o momento da Missão na sexta-feira e os louvores. A qualidade dos palestrantes e a relevância dos workshops superaram as expectativas.
+                    </p>
+                    <p>
+                      <strong>Pontos Críticos:</strong> As áreas que exigem atenção prioritária são a <strong>Alimentação</strong> e o <strong>Credenciamento</strong>. Relatos frequentes apontam lentidão nas filas de check-in para grandes grupos e falta de opções (e pontos de distribuição) de almoço nos horários de pico.
+                    </p>
+                    <p>
+                      <strong>Sugestões Principais:</strong> Os participantes desejam que o evento tenha a <strong>duração estendida para o domingo</strong> e sugerem um espaçamento maior entre os intervalos para dar tempo de realizar networking na Feira de Ministérios com calma.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Panorama de todas as respostas abertas */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 print:break-inside-avoid mt-8">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-bold text-gray-800">Panorama Geral - Resumo das Respostas Escritas (IA)</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {openQuestionsData.map((q, i) => (
+                    <div key={q.id} className="bg-slate-50 border border-slate-200 p-5 rounded-xl print:break-inside-avoid">
+                      <div className="font-bold text-slate-500 mb-1 text-xs uppercase tracking-wider">Pergunta {i + 1}</div>
+                      <h4 className="font-semibold text-slate-800 mb-3 text-sm leading-tight">{q.title}</h4>
+                      <p className="text-sm text-slate-700 leading-relaxed italic border-l-2 border-blue-500 pl-3">
+                        "{q.summary}"
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+
+          
+
+            </>
+          )}
+
+{/* TAB: CONFIGURATOR */}
+          {activeTab === 'config' && (
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 flex justify-between items-center print:hidden">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">Construtor de Pesquisa</h3>
+                  <p className="text-gray-500 mt-1">Adicione, edite ou remova as perguntas deste questionário.</p>
+                </div>
+                <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold transition-colors flex items-center gap-2 shadow-sm">
+                  <Plus size={20} /> Nova Pergunta
+                </button>
+              </div>
+
+              
+              <div className="space-y-10">
+                {sectionsList.map((section, sIndex) => (
+                  <div key={section.id} className="relative">
+                    {/* Topic Header */}
+                    <div className="bg-slate-900 text-white p-5 rounded-2xl mb-4 flex justify-between items-center shadow-md">
+                      <div>
+                        <span className="text-blue-400 font-bold text-sm uppercase tracking-wider mb-1 block">Tópico {sIndex + 1}</span>
+                        <h2 className="text-xl font-bold">{section.title}</h2>
+                        {section.description && <p className="text-slate-400 text-sm mt-1">{section.description}</p>}
+                      </div>
+                      <div className="flex gap-2">
+                        <button className="text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-xl text-sm font-bold transition-colors flex items-center gap-2 border border-slate-700">
+                          <Edit size={16} /> Editar
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Questions in this topic */}
+                    <div className="space-y-4 pl-4 border-l-[3px] border-blue-100 ml-4 py-2">
+                      {section.questions.map((q, index) => (
+                        <div key={q.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex gap-4 group hover:border-blue-300 transition-all relative">
+                          {/* Anchor line connecting to the main timeline */}
+                          <div className="absolute top-1/2 -left-4 w-4 h-[2px] bg-blue-100"></div>
+                          
+                          <div className="pt-1 text-gray-300 cursor-grab hover:text-gray-500">
+                            <GripVertical size={24} />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start mb-2">
+                              <h4 className="font-bold text-gray-800 text-lg">
+                                <span className="text-blue-600 mr-2">{q.id}.</span> 
+                                {q.text}
+                              </h4>
+                              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => { setCurrentQuestion(q); setCurrentSectionId(section.id); setIsModalOpen(true); }} className="p-2 text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-blue-50 rounded-lg transition-colors"><Edit size={16} /></button>
+                                <button onClick={() => {}} className="p-2 text-gray-500 hover:text-red-600 bg-gray-50 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
+                              </div>
+                            </div>
+                            
+                            <div className="mt-3">
+                              {q.type === 'paragraph' && (
+                                <div className="w-full border-b border-gray-300 pb-2 text-gray-400 text-sm italic">Texto de resposta longa...</div>
+                              )}
+                              {q.type === 'checkbox' && q.options && (
+                                <div className="flex flex-col gap-2">
+                                  {q.options.map(opt => (
+                                    <div key={opt} className="flex items-center gap-2 text-gray-600 font-medium">
+                                      <div className="w-4 h-4 border border-gray-300 rounded-sm"></div>
+                                      {opt}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {q.type === 'radio' && q.options && (
+                                <div className="flex flex-col gap-2">
+                                  {q.options.map(opt => (
+                                    <div key={opt} className="flex items-center gap-2 text-gray-600 font-medium">
+                                      <div className="w-4 h-4 border border-gray-300 rounded-full"></div>
+                                      {opt}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {q.type === 'linear' && (
+                                <div className="flex items-center gap-8 text-gray-600 text-sm font-medium">
+                                  <div className="flex flex-col items-center gap-2"><div className="w-4 h-4 rounded-full border border-gray-300"></div>1</div>
+                                  <div className="flex flex-col items-center gap-2"><div className="w-4 h-4 rounded-full border border-gray-300"></div>2</div>
+                                  <div className="flex flex-col items-center gap-2"><div className="w-4 h-4 rounded-full border border-gray-300"></div>3</div>
+                                  <div className="flex flex-col items-center gap-2"><div className="w-4 h-4 rounded-full border border-gray-300"></div>4</div>
+                                  <div className="flex flex-col items-center gap-2"><div className="w-4 h-4 rounded-full border border-gray-300"></div>5</div>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="mt-4 flex items-center gap-3">
+                              <span className="text-xs font-bold bg-gray-100 text-gray-500 px-2 py-1 rounded uppercase tracking-wider">
+                                Tipo: {q.type === 'paragraph' ? 'Texto Longo' : q.type === 'checkbox' ? 'Múltipla Escolha' : q.type === 'radio' ? 'Escolha Única' : 'Escala Linear'}
+                              </span>
+                              {q.condition && (
+                                <span className="text-xs font-bold bg-purple-100 text-purple-700 px-2 py-1 rounded uppercase tracking-wider flex items-center gap-1 shadow-sm border border-purple-200">
+                                  ⚡ Pula para o Tópico {q.condition.targetSectionId} (Se '{q.condition.valueToSkip}')
+                                </span>
+                              )}
+                              <span className="text-xs font-bold text-gray-400 flex items-center gap-1 ml-auto">
+                                <div className="w-2 h-2 rounded-full bg-green-500"></div> Obrigatória
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {/* Add question to topic button */}
+                      <button onClick={() => { setCurrentQuestion(null); setCurrentSectionId(section.id); setIsModalOpen(true); }} className="w-full border-2 border-dashed border-gray-200 hover:border-blue-400 text-gray-400 hover:text-blue-600 font-bold py-3 rounded-xl transition-colors flex justify-center items-center gap-2 bg-gray-50/50 hover:bg-blue-50/50">
+                        <Plus size={18} /> Adicionar pergunta a este tópico
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              
+              <div className="mt-8 flex justify-end gap-4 print:hidden">
+                 <button className="px-6 py-2.5 text-gray-600 font-bold hover:bg-gray-100 rounded-xl transition-colors">Descartar Alterações</button>
+                 <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-xl font-bold shadow-sm transition-colors">Salvar Questionário</button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: ANALYSIS BY QUESTION */}
+          {activeTab === 'analysis' && (
+            <div className="flex flex-col gap-6">
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 print:break-inside-avoid print:mb-8">
+                <label className="block text-sm font-bold text-gray-700 mb-2">Selecione uma pergunta aberta para analisar:</label>
+                <select 
+                  className="w-full border border-gray-300 rounded-xl p-4 text-gray-800 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 outline-none"
+                  value={selectedQuestionId}
+                  onChange={(e) => setSelectedQuestionId(Number(e.target.value))}
+                >
+                  {openQuestionsData.map(q => (
+                    <option key={q.id} value={q.id}>Questão {q.id}: {q.title}</option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedQuestion && (
+                <>
+                  {/* Resumo da IA */}
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-6 rounded-2xl shadow-sm">
+                    <div className="flex items-center gap-2 text-blue-900 font-bold text-lg mb-3">
+                      <Sparkles className="text-blue-600" />
+                      Resumo da Inteligência Artificial
+                    </div>
+                    <p className="text-blue-800 leading-relaxed font-medium">
+                      {selectedQuestion.summary}
+                    </p>
+                  </div>
+
+                  {/* Respostas Individuais */}
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mt-2">
+                    <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                      <h3 className="text-xl font-bold text-gray-800">Respostas Individuais (Desanonimizadas por ID)</h3>
+                      <span className="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                        {selectedQuestion.individualAnswers.length} respostas abertas lidas
+                      </span>
+                    </div>
+                    <div className="divide-y divide-gray-100">
+                      {selectedQuestion.individualAnswers.map((answer, index) => (
+                        <div key={index} className="p-6 hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="text-xs font-bold text-gray-500 bg-gray-200 px-2 py-1 rounded">ID: {answer.id}</span>
+                          </div>
+                          <p className="text-gray-700 text-sm leading-relaxed">
+                            "{answer.text}"
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* TAB: ACTIONS */}
+          {activeTab === 'actions' && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+                <h3 className="text-xl font-bold text-gray-800">Sugestões Filtradas pela IA (Sem duplicatas)</h3>
+                <p className="text-gray-500 mt-1">Abaixo está a lista consolidada do que deve ser melhorado ou alterado para a próxima edição, extraído das respostas descritivas.</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Prioridade / Qtd</th>
+                      <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Categoria</th>
+                      <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Sugestão de Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {actionPlan.map((item, index) => (
+                      <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="py-4 px-6">
+                          <span className="inline-flex items-center justify-center bg-gray-100 text-gray-800 text-xs font-bold px-2.5 py-1 rounded-full border border-gray-200">
+                            #{index + 1}
+                          </span>
+                          <span className="ml-3 text-sm text-gray-500 font-medium">{item.duplicateCount} citações</span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="text-sm font-semibold text-blue-700 bg-blue-50 px-3 py-1 rounded-full">{item.category}</span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <p className="text-gray-800 text-sm font-medium">{item.action}</p>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: RESPONSES */}
+          {activeTab === 'responses' && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">Respostas Gerais Recebidas</h3>
+                  <p className="text-gray-500 mt-1">Navegue por todos os envios originais da pesquisa.</p>
+                </div>
+                <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden">
+                   <input type="text" placeholder="Buscar em respostas..." className="px-4 py-2 text-sm focus:outline-none w-64" />
+                   <button className="bg-gray-100 px-4 text-gray-600 font-medium text-sm hover:bg-gray-200">Filtrar</button>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">ID</th>
+                      <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Data / Hora</th>
+                      <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Nota (Geral)</th>
+                      <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Feedback Aberto (Destaque)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {allResponses.map((res) => (
+                      <tr key={res.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="py-4 px-6 text-sm font-medium text-gray-500">{res.id}</td>
+                        <td className="py-4 px-6 text-sm text-gray-600">{res.date}</td>
+                        <td className="py-4 px-6 text-sm">
+                          <div className="flex items-center gap-1 font-bold text-gray-700">
+                            <Star size={14} className="text-yellow-500 fill-yellow-500" />
+                            {res.rating}
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 text-sm text-gray-700">
+                          "{res.feedback}"
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </main>
+
+      {/* Modal de Edição */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h3 className="text-xl font-bold text-gray-800">{currentQuestion ? 'Editar Pergunta' : 'Criar Nova Pergunta'}</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1 space-y-5">
+              <div>
+                 <label className="block text-sm font-bold text-gray-700 mb-2">Título da Pergunta</label>
+                 <textarea 
+                    className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none text-gray-900 font-medium" 
+                    rows={3}
+                    defaultValue={currentQuestion ? currentQuestion.text : ''} 
+                    placeholder="Ex: Como você avalia a limpeza dos banheiros?"
+                 />
+              </div>
+              
+              <div>
+                 <label className="block text-sm font-bold text-gray-700 mb-2">Tipo de Resposta</label>
+                 <select 
+                   className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-gray-900 font-medium"
+                   defaultValue={currentQuestion ? currentQuestion.type : 'paragraph'}
+                 >
+                   <option value="paragraph">Texto Longo (Parágrafo)</option>
+                   <option value="checkbox">Múltipla Escolha (Várias opções)</option>
+                   <option value="radio">Escolha Única (Apenas uma opção)</option>
+                   <option value="linear">Escala Linear (1 a 5 estrelas)</option>
+                 </select>
+              </div>
+
+              {(currentQuestion?.type === 'checkbox' || currentQuestion?.type === 'radio') && (
+                <div className="pt-2 border-t border-gray-100">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Opções de Resposta</label>
+                  <div className="space-y-2">
+                    {currentQuestion.options?.map((opt, i) => (
+                      <div key={i} className="flex gap-2">
+                        <input type="text" defaultValue={opt} className="flex-1 border border-gray-300 rounded-lg p-2 text-sm text-gray-900 font-medium" />
+                        <button className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
+                      </div>
+                    ))}
+                    <button className="text-sm font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-2">
+                      <Plus size={14} /> Adicionar Opção
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {currentQuestion?.type === 'radio' && (
+                <div className="pt-4 border-t border-gray-100">
+                  <label className="block text-sm font-bold text-gray-700 mb-2 text-purple-700">⚡ Lógica Condicional (Salto)</label>
+                  <p className="text-xs text-gray-500 mb-3">Defina se uma resposta específica deve fazer o usuário pular o restante deste tópico e ir para o próximo.</p>
+                  <div className="flex items-center gap-3 bg-purple-50 p-4 rounded-xl border border-purple-100">
+                    <span className="text-sm font-bold text-gray-700">Se a resposta for:</span>
+                    <select className="border border-gray-300 rounded-lg p-2 text-sm text-gray-900 bg-white min-w-[150px]">
+                       <option value="">Nenhuma (Não pular)</option>
+                       {currentQuestion.options?.map((opt, i) => (
+                         <option key={i} value={opt} selected={currentQuestion.condition?.valueToSkip === opt}>{opt}</option>
+                       ))}
+                    </select>
+                    <span className="text-sm font-bold text-gray-700">➔ Pular para próximo tópico</span>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex items-center gap-2 pt-2">
+                <input type="checkbox" id="obrigatoria" defaultChecked className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                <label htmlFor="obrigatoria" className="text-sm font-medium text-gray-700">Tornar esta pergunta obrigatória</label>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50">
+               <button onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-200 rounded-xl transition-colors">Cancelar</button>
+               <button onClick={handleSaveQuestion} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold shadow-sm transition-colors">Salvar Pergunta</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
