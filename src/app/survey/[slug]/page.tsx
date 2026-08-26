@@ -75,7 +75,13 @@ export default function SurveyPage() {
       setCurrentSectionIndex(nextIndex);
       window.scrollTo(0, 0);
     } else {
-      setIsFinished(true);
+      fetch(`/api/surveys/${slug}/responses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers })
+      }).then(() => {
+        setIsFinished(true);
+      }).catch(console.error);
     }
   };
 

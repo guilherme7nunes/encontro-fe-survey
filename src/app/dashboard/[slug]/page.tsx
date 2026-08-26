@@ -11,31 +11,12 @@ import { ArrowLeft, Users, Star, ArrowUpRight, Clock, MessageSquare, Menu, Layou
 import Link from 'next/link';
 
 // Mock data removed
-const allResponses: any[] = [];
-const actionPlan: any[] = [];
-const satisfactionByArea: any[] = [];
+
+
+
 
 // Mock data: Questions Analysis (New Feature)
-const openQuestionsData = [
-  { id: 11, title: 'O que poderíamos melhorar no credenciamento e na recepção?', summary: 'A maioria elogiou a recepção. No entanto, relataram lentidão no credenciamento de grandes caravanas.', individualAnswers: [{ id: '#004', text: 'O credenciamento da nossa caravana atrasou bastante. Tinha pouca gente atendendo o grupo grande.' }, { id: '#045', text: 'A fila do QR Code estava travando sem internet, coloquem Wi-Fi liberado na entrada.' }] },
-  { id: 17, title: 'Qual foi o momento ou atividade que mais marcou você durante o evento?', summary: 'A "Missão na sexta-feira à tarde" e o "Louvor de encerramento no sábado" foram os momentos mais citados de longe.', individualAnswers: [{ id: '#001', text: 'Com certeza o momento da missão nas ruas. Ver a alegria das pessoas ao receberem uma oração mudou minha perspectiva.' }, { id: '#033', text: 'O louvor de sábado à noite. A atmosfera estava indescritível, chorei do início ao fim.' }] },
-  { id: 18, title: 'Que tema, atividade ou formato você gostaria de ver em uma próxima edição?', summary: 'Muitos pediram mais temas focados em tecnologia e juventude na igreja.', individualAnswers: [{ id: '#015', text: 'Gostaria de oficinas mais práticas sobre uso de redes sociais.' }, { id: '#019', text: 'Mais workshops sobre missões transculturais.' }] },
-  { id: 25, title: 'Qual workshop ou tema mais contribuiu para você? Por quê?', summary: 'O workshop de liderança servil foi o mais citado, devido à praticidade das lições.', individualAnswers: [{ id: '#022', text: 'O de liderança foi um divisor de águas.' }] },
-  { id: 26, title: 'O que você mudaria ou melhoraria nos workshops para uma próxima edição?', summary: 'Tempo maior para perguntas e respostas no final das sessões.', individualAnswers: [{ id: '#089', text: 'Queria que tivesse uns 15 minutos finais só pra tirar dúvidas.' }] },
-  { id: 33, title: 'O que você mais gostou na Feira dos Ministérios?', summary: 'A diversidade de projetos sociais e o networking com pessoas de diferentes estados.', individualAnswers: [{ id: '#041', text: 'Gostei de conhecer projetos do nordeste.' }] },
-  { id: 34, title: 'O que poderia ser melhorado na Feira dos Ministérios?', summary: 'A organização do espaço, pois os corredores ficaram muito apertados em horários de pico.', individualAnswers: [{ id: '#112', text: 'Os stands estavam muito juntos, mal dava para andar.' }] },
-  { id: 38, title: 'Que tipo de experiência ou interação com patrocinadores você gostaria de encontrar em uma próxima edição?', summary: 'Brindes mais interativos, totens de fotos e sorteios durante a plenária.', individualAnswers: [{ id: '#009', text: 'Sorteios de livros dos patrocinadores.' }] },
-  { id: 44, title: 'O que mais marcou você na experiência da missão?', summary: 'O sentimento de ver a reação das pessoas nas ruas e a união do grupo.', individualAnswers: [{ id: '#033', text: 'Orar por pessoas que não conhecíamos.' }] },
-  { id: 45, title: 'O que poderia ser melhorado na missão?', summary: 'Um pouco mais de tempo, pois foi muito corrido na hora de voltar ao local.', individualAnswers: [{ id: '#099', text: 'Tivemos pouco tempo para conversar mais a fundo com as pessoas.' }] },
-  { id: 52, title: 'O que você sugere que seja diferente na alimentação de uma próxima edição?', summary: 'Aumentar os caixas e distribuir melhor os horários para evitar longas filas.', individualAnswers: [{ id: '#001', text: 'As filas do almoço demoraram muito.' }] },
-  { id: 53, title: 'O que você mais gostou no Encontro Nacional da FE 2026?', summary: 'O louvor intenso e a oportunidade de reconectar com a visão do ministério.', individualAnswers: [{ id: '#056', text: 'O agir de Deus nos louvores.' }] },
-  { id: 54, title: 'Qual foi o momento mais marcante para você durante o evento?', summary: 'O culto de sábado à noite e a oração coletiva.', individualAnswers: [{ id: '#102', text: 'O encerramento no sábado de noite.' }] },
-  { id: 55, title: 'O evento trouxe algum aprendizado, inspiração ou conexão que você pretende levar para sua vida ou ministério?', summary: 'Muitas ideias práticas da Feira dos Ministérios para aplicar na igreja local.', individualAnswers: [{ id: '#044', text: 'Sim, vou implementar o projeto infantil que vi no stand X.' }] },
-  { id: 58, title: 'Se você pudesse mudar apenas uma coisa no Encontro Nacional da FE, o que mudaria?', summary: 'Aumentaria um dia de evento.', individualAnswers: [{ id: '#002', text: 'Gostaria que durasse até domingo à noite.' }] },
-  { id: 59, title: 'O que NÃO podemos deixar de fazer em uma próxima edição?', summary: 'A missão evangelística prática na sexta-feira.', individualAnswers: [{ id: '#077', text: 'Continuem fazendo a missão na sexta!' }] },
-  { id: 60, title: 'Que sugestão você daria para que o próximo Encontro Nacional da FE seja ainda melhor?', summary: 'Realizar o evento num espaço um pouco maior e com mais banheiros.', individualAnswers: [{ id: '#013', text: 'Mais banheiros disponíveis perto da plenária.' }] },
-  { id: 61, title: 'Existe algo que não perguntamos nesta pesquisa e que você gostaria de compartilhar conosco?', summary: 'Muitos usaram este espaço apenas para agradecer e parabenizar a equipe.', individualAnswers: [{ id: '#091', text: 'Obrigado por tudo, vocês foram incríveis!' }] }
-];
+
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6'];
 const PIE_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316'];
 
@@ -207,9 +188,9 @@ export default function DashboardPage() {
     saveToDb(newSections);
   };
 
-  const [selectedQuestionId, setSelectedQuestionId] = useState(openQuestionsData[0].id);
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
 
-  const selectedQuestion = openQuestionsData.find(q => q.id === selectedQuestionId);
+  
 
   return (
     <div className="min-h-screen bg-gray-50 flex print:bg-white print:block" style={{WebkitPrintColorAdjust: "exact", printColorAdjust: "exact"}}>
@@ -424,149 +405,99 @@ export default function DashboardPage() {
           )}
 
           {/* TAB: ANALYSIS BY QUESTION */}
-          {activeTab === 'analysis' && (
-            <div className="flex flex-col gap-6">
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 print:break-inside-avoid print:mb-8">
-                <label className="block text-sm font-bold text-gray-700 mb-2">Selecione uma pergunta aberta para analisar:</label>
-                <select 
-                  className="w-full border border-gray-300 rounded-xl p-4 text-gray-800 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 outline-none"
-                  value={selectedQuestionId}
-                  onChange={(e) => setSelectedQuestionId(Number(e.target.value))}
-                >
-                  {openQuestionsData.map(q => (
-                    <option key={q.id} value={q.id}>Questão {q.id}: {q.title}</option>
-                  ))}
-                </select>
-              </div>
+          {activeTab === 'analysis' && (() => {
+            const textQuestions = sectionsList.flatMap(s => s.questions.filter(q => q.type === 'textarea'));
+            if (textQuestions.length === 0) {
+              return <div className="bg-white p-8 rounded-2xl border text-center text-gray-500">Nenhuma pergunta aberta configurada nesta pesquisa.</div>;
+            }
+            const activeId = selectedQuestionId || textQuestions[0]?.id;
+            const activeQ = textQuestions.find(q => q.id === activeId);
+            const answers = responsesData.filter(r => r.answers && r.answers[activeId]).map(r => ({ id: r.id.substring(0, 8), text: r.answers[activeId] }));
 
-              {selectedQuestion && (
-                <>
-                  {/* Resumo da IA */}
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-6 rounded-2xl shadow-sm">
-                    <div className="flex items-center gap-2 text-blue-900 font-bold text-lg mb-3">
-                      <Sparkles className="text-blue-600" />
-                      Resumo da Inteligência Artificial
-                    </div>
-                    <p className="text-blue-800 leading-relaxed font-medium">
-                      {selectedQuestion.summary}
-                    </p>
-                  </div>
-
-                  {/* Respostas Individuais */}
+            return (
+              <div className="flex flex-col gap-6">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 print:break-inside-avoid print:mb-8">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Selecione uma pergunta aberta para analisar:</label>
+                  <select 
+                    className="w-full border border-gray-300 rounded-xl p-4 text-gray-800 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 outline-none"
+                    value={activeId || ''}
+                    onChange={(e) => setSelectedQuestionId(e.target.value)}
+                  >
+                    {textQuestions.map(q => (
+                      <option key={q.id} value={q.id}>{q.text}</option>
+                    ))}
+                  </select>
+                </div>
+                {activeQ && (
                   <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mt-2">
                     <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                      <h3 className="text-xl font-bold text-gray-800">Respostas Individuais (Desanonimizadas por ID)</h3>
+                      <h3 className="text-xl font-bold text-gray-800">Respostas Individuais</h3>
                       <span className="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-                        {selectedQuestion.individualAnswers.length} respostas abertas lidas
+                        {answers.length} respostas abertas lidas
                       </span>
                     </div>
                     <div className="divide-y divide-gray-100">
-                      {selectedQuestion.individualAnswers.map((answer, index) => (
-                        <div key={index} className="p-6 hover:bg-gray-50 transition-colors">
-                          <div className="flex items-center gap-3 mb-2">
-                            <span className="text-xs font-bold text-gray-500 bg-gray-200 px-2 py-1 rounded">ID: {answer.id}</span>
+                      {answers.length === 0 ? (
+                        <div className="p-6 text-gray-500 text-center">Nenhuma resposta recebida para esta pergunta ainda.</div>
+                      ) : (
+                        answers.map((answer, index) => (
+                          <div key={index} className="p-6 hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="text-xs font-bold text-gray-500 bg-gray-200 px-2 py-1 rounded">ID: #{answer.id}</span>
+                            </div>
+                            <p className="text-gray-700 text-sm leading-relaxed">"{answer.text}"</p>
                           </div>
-                          <p className="text-gray-700 text-sm leading-relaxed">
-                            "{answer.text}"
-                          </p>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
                   </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* TAB: ACTIONS */}
+                )}
+              </div>
+            );
+          })()}
           {activeTab === 'actions' && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-                <h3 className="text-xl font-bold text-gray-800">Sugestões Filtradas pela IA (Sem duplicatas)</h3>
-                <p className="text-gray-500 mt-1">Abaixo está a lista consolidada do que deve ser melhorado ou alterado para a próxima edição, extraído das respostas descritivas.</p>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Prioridade / Qtd</th>
-                      <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Categoria</th>
-                      <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Sugestão de Ação</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {actionPlan.map((item, index) => (
-                      <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="py-4 px-6">
-                          <span className="inline-flex items-center justify-center bg-gray-100 text-gray-800 text-xs font-bold px-2.5 py-1 rounded-full border border-gray-200">
-                            #{index + 1}
-                          </span>
-                          <span className="ml-3 text-sm text-gray-500 font-medium">{item.duplicateCount} citações</span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className="text-sm font-semibold text-blue-700 bg-blue-50 px-3 py-1 rounded-full">{item.category}</span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <p className="text-gray-800 text-sm font-medium">{item.action}</p>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="bg-white p-12 rounded-2xl border border-gray-100 text-center flex flex-col items-center justify-center">
+              <Sparkles size={48} className="text-blue-300 mb-4" />
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Plano de Ação Inteligente em Breve</h3>
+              <p className="text-gray-500 max-w-md mx-auto">
+                Assim que recebermos um volume suficiente de respostas reais, nossa Inteligência Artificial irá analisar os dados e gerar um plano de ação focado automaticamente.
+              </p>
             </div>
           )}
-
-          {/* TAB: RESPONSES */}
           {activeTab === 'responses' && (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800">Respostas Gerais Recebidas</h3>
-                  <p className="text-gray-500 mt-1">Navegue por todos os envios originais da pesquisa.</p>
-                </div>
-                <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden">
-                   <input type="text" placeholder="Buscar em respostas..." className="px-4 py-2 text-sm focus:outline-none w-64" />
-                   <button className="bg-gray-100 px-4 text-gray-600 font-medium text-sm hover:bg-gray-200">Filtrar</button>
-                </div>
-              </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">ID</th>
-                      <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Data / Hora</th>
-                      <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Nota (Geral)</th>
-                      <th className="py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider">Feedback Aberto (Destaque)</th>
+                <table className="w-full text-left">
+                  <thead className="bg-gray-50/50 border-b border-gray-100">
+                    <tr>
+                      <th className="py-4 px-6 text-sm font-bold text-gray-600 uppercase tracking-wider w-24">ID</th>
+                      <th className="py-4 px-6 text-sm font-bold text-gray-600 uppercase tracking-wider w-40">Data</th>
+                      <th className="py-4 px-6 text-sm font-bold text-gray-600 uppercase tracking-wider">Conteúdo da Resposta (JSON)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {allResponses.map((res) => (
-                      <tr key={res.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="py-4 px-6 text-sm font-medium text-gray-500">{res.id}</td>
-                        <td className="py-4 px-6 text-sm text-gray-600">{res.date}</td>
-                        <td className="py-4 px-6 text-sm">
-                          <div className="flex items-center gap-1 font-bold text-gray-700">
-                            <Star size={14} className="text-yellow-500 fill-yellow-500" />
-                            {res.rating}
-                          </div>
-                        </td>
-                        <td className="py-4 px-6 text-sm text-gray-700">
-                          "{res.feedback}"
-                        </td>
-                      </tr>
-                    ))}
+                    {responsesData.length === 0 ? (
+                      <tr><td colSpan={3} className="py-8 text-center text-gray-500">Nenhuma resposta registrada.</td></tr>
+                    ) : (
+                      responsesData.map((res) => (
+                        <tr key={res.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="py-4 px-6 text-sm font-medium text-gray-500">#{res.id.substring(0, 8)}</td>
+                          <td className="py-4 px-6 text-sm text-gray-600">{new Date(res.date).toLocaleString('pt-BR')}</td>
+                          <td className="py-4 px-6 text-sm text-gray-600">
+                            <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto max-w-lg">
+                              {JSON.stringify(res.answers, null, 2)}
+                            </pre>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
           )}
 
-        </div>
-      </main>
-
-      {/* Modal de Edição */}
-      {isModalOpen && (
+          {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
