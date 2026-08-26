@@ -217,9 +217,9 @@ export default function DashboardPage() {
       <aside className="hidden md:flex flex-col w-64 bg-slate-900 text-white min-h-screen print:hidden">
         <div className="p-6 border-b border-slate-800">
           <h1 className="font-bold text-xl flex items-center gap-2">
-            <LayoutDashboard className="text-blue-400" />
-            Painel ENF 26
-          </h1>
+              <LayoutDashboard className="text-blue-400" />
+              {eventTitle}
+            </h1>
         </div>
         <nav className="flex-1 p-4 flex flex-col gap-2">
           <button 
