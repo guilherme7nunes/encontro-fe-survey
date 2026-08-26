@@ -201,7 +201,13 @@ export default function DashboardPage() {
               <LayoutDashboard className="text-blue-400" />
               {eventTitle}
             </h1>
-        </div>
+          </div>
+          
+          <div className="px-4 pb-4 border-b border-slate-800">
+            <Link href="/dashboard" className="flex justify-center items-center gap-2 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors py-2 px-4 rounded-xl font-bold shadow-sm text-sm">
+              <ArrowLeft size={16} /> Voltar ao Início
+            </Link>
+          </div>
         <nav className="flex-1 p-4 flex flex-col gap-2">
           <button 
             onClick={() => setActiveTab('overview')}
@@ -238,13 +244,6 @@ export default function DashboardPage() {
             <List size={20} /> Respostas Brutas
           </button>
         </nav>
-        
-        {/* Back button */}
-        <div className="p-4 border-t border-slate-800">
-          <Link href="/dashboard" className="flex justify-center items-center gap-2 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors py-3 px-4 rounded-xl font-bold shadow-sm">
-            <ArrowLeft size={18} /> Voltar ao Início
-          </Link>
-        </div>
       </aside>
 
       {/* Main Content */}

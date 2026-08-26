@@ -16,7 +16,7 @@ export default function SurveyPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/surveys/${slug}`)
+    fetch(`/api/surveys/${slug}`, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } })
       .then(res => res.json())
       .then(data => {
         if (data.config) {
