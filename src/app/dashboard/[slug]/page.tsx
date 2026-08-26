@@ -497,7 +497,11 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {isModalOpen && (
+          </div>
+        </main>
+
+        {/* Modal de Edicao */}
+        {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
@@ -580,3 +584,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
