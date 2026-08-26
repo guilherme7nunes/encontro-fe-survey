@@ -56,3 +56,14 @@ export async function PUT(request: Request, context: { params: Promise<{ slug: s
     return NextResponse.json({ error: 'Erro ao atualizar pesquisa' }, { status: 500 });
   }
 }
+
+
+export async function DELETE(request: Request, context: { params: Promise<{ slug: string }> | { slug: string } }) {
+  const resolvedParams = await context.params;
+  try {
+    await prisma.survey.delete({ where: { id: resolvedParams.slug } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: 'Erro ao deletar pesquisa' }, { status: 500 });
+  }
+}

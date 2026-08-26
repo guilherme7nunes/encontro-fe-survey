@@ -15,6 +15,7 @@ export default function MasterDashboard() {
   const [surveys, setSurveys] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/surveys')
@@ -41,6 +42,26 @@ export default function MasterDashboard() {
         setSurveys([newSurvey, ...surveys]);
       }
     }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Tem certeza que deseja excluir esta pesquisa?')) {
+      await fetch(`/api/surveys/${id}`, { method: 'DELETE' });
+      setSurveys(surveys.filter(s => s.id !== id));
+      setOpenMenuId(null);
+    }
+  };
+
+  const handleToggleStatus = async (survey: any) => {
+    const newStatus = survey.status === 'Ativa' ? 'Pausada' : 'Ativa';
+    // Call API
+    await fetch(`/api/surveys/${survey.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    });
+    setSurveys(surveys.map(s => s.id === survey.id ? { ...s, status: newStatus } : s));
+    setOpenMenuId(null);
   };
 
   const handleDuplicate = (survey: typeof initialSurveys[0]) => {
@@ -159,3 +180,4 @@ export default function MasterDashboard() {
     </div>
   );
 }
+
