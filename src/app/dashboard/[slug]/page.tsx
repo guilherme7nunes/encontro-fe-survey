@@ -153,6 +153,7 @@ export default function DashboardPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<any>(null);
+    const [editingQ, setEditingQ] = useState<any>(null);
   const [currentSectionId, setCurrentSectionId] = useState<number | null>(null);
 
   const handleSaveQuestion = () => {
@@ -336,7 +337,7 @@ export default function DashboardPage() {
                                 {q.text}
                               </h4>
                               <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => { setCurrentQuestion(q); setCurrentSectionId(section.id); setIsModalOpen(true); }} className="p-2 text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-blue-50 rounded-lg transition-colors"><Edit size={16} /></button>
+                                <button onClick={() => { setCurrentQuestion(q); setEditingQ(JSON.parse(JSON.stringify(q))); setCurrentSectionId(section.id); setIsModalOpen(true); }} className="p-2 text-gray-500 hover:text-blue-600 bg-gray-50 hover:bg-blue-50 rounded-lg transition-colors"><Edit size={16} /></button>
                                 <button onClick={() => {}} className="p-2 text-gray-500 hover:text-red-600 bg-gray-50 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
                               </div>
                             </div>
@@ -394,7 +395,7 @@ export default function DashboardPage() {
                       ))}
                       
                       {/* Add question to topic button */}
-                      <button onClick={() => { setCurrentQuestion(null); setCurrentSectionId(section.id); setIsModalOpen(true); }} className="w-full border-2 border-dashed border-gray-200 hover:border-blue-400 text-gray-400 hover:text-blue-600 font-bold py-3 rounded-xl transition-colors flex justify-center items-center gap-2 bg-gray-50/50 hover:bg-blue-50/50">
+                      <button onClick={() => { setCurrentQuestion(null); setEditingQ({ id: Date.now(), text: '', type: 'radio', options: ['Opção 1', 'Opção 2'] }); setCurrentSectionId(section.id); setIsModalOpen(true); }} className="w-full border-2 border-dashed border-gray-200 hover:border-blue-400 text-gray-400 hover:text-blue-600 font-bold py-3 rounded-xl transition-colors flex justify-center items-center gap-2 bg-gray-50/50 hover:bg-blue-50/50">
                         <Plus size={18} /> Adicionar pergunta a este tópico
                       </button>
                     </div>
@@ -509,8 +510,8 @@ export default function DashboardPage() {
           </div>
         </main>
 
-        {/* Modal de Edicao */}
-        {isModalOpen && (
+        {/* Modal de Edição */}
+        {isModalOpen && editingQ && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
@@ -524,7 +525,8 @@ export default function DashboardPage() {
                  <textarea 
                     className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none text-gray-900 font-medium" 
                     rows={3}
-                    defaultValue={currentQuestion ? currentQuestion.text : ''} 
+                    value={editingQ.text}
+                    onChange={(e) => setEditingQ({...editingQ, text: e.target.value})}
                     placeholder="Ex: Como você avalia a limpeza dos banheiros?"
                  />
               </div>
@@ -533,7 +535,14 @@ export default function DashboardPage() {
                  <label className="block text-sm font-bold text-gray-700 mb-2">Tipo de Resposta</label>
                  <select 
                    className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-gray-900 font-medium"
-                   defaultValue={currentQuestion ? currentQuestion.type : 'paragraph'}
+                   value={editingQ.type}
+                   onChange={(e) => {
+                       let opts = editingQ.options;
+                       if ((e.target.value === 'radio' || e.target.value === 'checkbox') && (!opts || opts.length === 0)) {
+                           opts = ['Opção 1', 'Opção 2'];
+                       }
+                       setEditingQ({...editingQ, type: e.target.value, options: opts});
+                   }}
                  >
                    <option value="paragraph">Texto Longo (Parágrafo)</option>
                    <option value="checkbox">Múltipla Escolha (Várias opções)</option>
@@ -542,44 +551,66 @@ export default function DashboardPage() {
                  </select>
               </div>
 
-              {(currentQuestion?.type === 'checkbox' || currentQuestion?.type === 'radio') && (
+              {(editingQ.type === 'checkbox' || editingQ.type === 'radio') && (
                 <div className="pt-2 border-t border-gray-100">
                   <label className="block text-sm font-bold text-gray-700 mb-2">Opções de Resposta</label>
                   <div className="space-y-2">
-                    {currentQuestion.options?.map((opt, i) => (
+                    {(editingQ.options || []).map((opt, i) => (
                       <div key={i} className="flex gap-2">
-                        <input type="text" defaultValue={opt} className="flex-1 border border-gray-300 rounded-lg p-2 text-sm text-gray-900 font-medium" />
-                        <button className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
+                        <input 
+                            type="text" 
+                            value={opt} 
+                            onChange={(e) => {
+                                const newOpts = [...editingQ.options];
+                                newOpts[i] = e.target.value;
+                                setEditingQ({...editingQ, options: newOpts});
+                            }}
+                            className="flex-1 border border-gray-300 rounded-lg p-2 text-sm text-gray-900 font-medium" 
+                        />
+                        <button 
+                            onClick={() => {
+                                const newOpts = editingQ.options.filter((_, idx) => idx !== i);
+                                setEditingQ({...editingQ, options: newOpts});
+                            }}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={16}/></button>
                       </div>
                     ))}
-                    <button className="text-sm font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-2">
+                    <button 
+                        onClick={() => setEditingQ({...editingQ, options: [...(editingQ.options||[]), 'Nova opção']})}
+                        className="text-sm font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-2">
                       <Plus size={14} /> Adicionar Opção
                     </button>
                   </div>
                 </div>
               )}
               
-              {currentQuestion?.type === 'radio' && (
+              {editingQ.type === 'radio' && (
                 <div className="pt-4 border-t border-gray-100">
-                  <label className="block text-sm font-bold text-gray-700 mb-2 text-purple-700">⚡ Lógica Condicional (Salto)</label>
-                  <p className="text-xs text-gray-500 mb-3">Defina se uma resposta específica deve fazer o usuário pular o restante deste tópico e ir para o próximo.</p>
-                  <div className="flex items-center gap-3 bg-purple-50 p-4 rounded-xl border border-purple-100">
-                    <span className="text-sm font-bold text-gray-700">Se a resposta for:</span>
-                    <select className="border border-gray-300 rounded-lg p-2 text-sm text-gray-900 bg-white min-w-[150px]">
+                  <label className="block text-sm font-bold text-purple-700 mb-2 flex items-center gap-2"><Power size={14}/> Lógica Condicional (Salto)</label>
+                  <p className="text-xs text-gray-500 mb-3">Defina se uma resposta específica deve fazer o usuário pular para o próximo tópico.</p>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-purple-50/50 p-4 rounded-xl border border-purple-100">
+                    <span className="text-sm font-bold text-gray-700 whitespace-nowrap">Pular se for:</span>
+                    <select 
+                        className="border border-gray-300 rounded-lg p-2 text-sm text-gray-900 bg-white min-w-[150px] w-full"
+                        value={editingQ.condition?.valueToSkip || ''}
+                        onChange={(e) => {
+                            if (!e.target.value) {
+                                const newQ = {...editingQ};
+                                delete newQ.condition;
+                                setEditingQ(newQ);
+                            } else {
+                                setEditingQ({...editingQ, condition: { questionId: editingQ.id, valueToSkip: e.target.value, targetSectionId: currentSectionId! + 1 }});
+                            }
+                        }}
+                    >
                        <option value="">Nenhuma (Não pular)</option>
-                       {currentQuestion.options?.map((opt, i) => (
-                         <option key={i} value={opt} selected={currentQuestion.condition?.valueToSkip === opt}>{opt}</option>
+                       {(editingQ.options || []).map((opt, i) => (
+                         <option key={i} value={opt}>{opt}</option>
                        ))}
                     </select>
-                    <span className="text-sm font-bold text-gray-700">➔ Pular para próximo tópico</span>
                   </div>
                 </div>
               )}
-              
-              <div className="flex items-center gap-2 pt-2">
-                <input type="checkbox" id="obrigatoria" defaultChecked className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                <label htmlFor="obrigatoria" className="text-sm font-medium text-gray-700">Tornar esta pergunta obrigatória</label>
-              </div>
             </div>
 
             <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50">
@@ -593,4 +624,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
