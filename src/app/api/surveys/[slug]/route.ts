@@ -2,7 +2,9 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export async function GET(request: Request, { params }: { params: { slug: string } }) {
+export async function GET(request: Request, context: { params: Promise<{ slug: string }> | { slug: string } }) {
+  const resolvedParams = await context.params;
+  const params = resolvedParams;
   try {
     const survey = await prisma.survey.findUnique({
       where: { id: params.slug },
@@ -30,7 +32,9 @@ export async function GET(request: Request, { params }: { params: { slug: string
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { slug: string } }) {
+export async function PUT(request: Request, context: { params: Promise<{ slug: string }> | { slug: string } }) {
+  const resolvedParams = await context.params;
+  const params = resolvedParams;
   try {
     const body = await request.json();
     const { title, status, config } = body;
