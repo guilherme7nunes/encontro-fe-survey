@@ -7,7 +7,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   PieChart, Pie, Cell
 } from 'recharts';
-import { ArrowLeft, Users, Star, ArrowUpRight, Clock, MessageSquare, Menu, LayoutDashboard, CheckSquare, List, MessageCircleQuestion, Sparkles, Printer, FileDown, Settings, Edit, Trash2, Plus, GripVertical } from 'lucide-react';
+import { ArrowLeft, Users, Star, ArrowUpRight, Clock, MessageSquare, Menu, LayoutDashboard, CheckSquare, List, MessageCircleQuestion, Sparkles, Printer, FileDown, Settings, Edit, Trash2, Plus, GripVertical, Power } from 'lucide-react';
 import Link from 'next/link';
 
 // Mock data removed
