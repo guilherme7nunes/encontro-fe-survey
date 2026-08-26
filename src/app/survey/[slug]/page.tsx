@@ -30,6 +30,20 @@ export default function SurveyPage() {
   const [answers, setAnswers] = useState<Record<number, any>>({});
   const [isFinished, setIsFinished] = useState(false);
 
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+      <p>Carregando...</p>
+    </div>;
+  }
+
+  if (!surveyData || surveyData.length === 0) {
+    return <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white">
+      <p className="text-xl font-bold">Pesquisa no encontrada ou vazia.</p>
+    </div>;
+  }
+
   const currentSection = surveyData[currentSectionIndex];
   const isFirstSection = currentSectionIndex === 0;
   const isLastSection = currentSectionIndex === surveyData.length - 1;
