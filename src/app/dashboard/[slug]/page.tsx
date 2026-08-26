@@ -49,7 +49,7 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-bold text-gray-800 border-b pb-2 mb-6">{section.title}</h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {section.questions.map((q) => {
-                if (q.type === 'textarea') return null;
+                if (q.type === 'paragraph') return null;
                 let chartData = [];
                 if (q.type === 'radio' || q.type === 'checkbox') {
                   const options = q.options || [];
@@ -116,6 +116,13 @@ export default function DashboardPage() {
   const [responsesData, setResponsesData] = useState<any[]>([]);
   const [surveyMeta, setSurveyMeta] = useState<any>({ title: 'Painel ENF 26' });
   const [isLoading, setIsLoading] = useState(true);
+  const handleClearResponses = async () => {
+    if (confirm('ATENÇÃO: Isso apagará TODAS as respostas desta pesquisa permanentemente. Tem certeza?')) {
+      await fetch(`/api/surveys/${params.slug}/responses/clear`, { method: 'DELETE' });
+      setResponsesData([]);
+      alert('Respostas apagadas com sucesso.');
+    }
+  };
 
   useEffect(() => {
     Promise.all([
@@ -405,7 +412,7 @@ export default function DashboardPage() {
 
           {/* TAB: ANALYSIS BY QUESTION */}
           {activeTab === 'analysis' && (() => {
-            const textQuestions = sectionsList.flatMap(s => s.questions.filter(q => q.type === 'textarea'));
+            const textQuestions = sectionsList.flatMap(s => s.questions.filter(q => q.type === 'paragraph'));
             if (textQuestions.length === 0) {
               return <div className="bg-white p-8 rounded-2xl border text-center text-gray-500">Nenhuma pergunta aberta configurada nesta pesquisa.</div>;
             }
@@ -463,7 +470,10 @@ export default function DashboardPage() {
               </p>
             </div>
           )}
-          {activeTab === 'responses' && (
+          {activeTab === 'responses' && (<>
+            <div className="flex justify-end mb-4">
+              <button onClick={handleClearResponses} className="bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-lg font-bold text-sm transition-colors border border-red-100 flex items-center gap-2"><Trash2 size={16}/> Zerar todas as respostas</button>
+            </div>
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
@@ -494,7 +504,7 @@ export default function DashboardPage() {
                 </table>
               </div>
             </div>
-          )}
+          </>)}
 
           </div>
         </main>

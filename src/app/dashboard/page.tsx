@@ -15,6 +15,7 @@ export default function MasterDashboard() {
   const [surveys, setSurveys] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'surveys' | 'config'>('surveys');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -36,6 +37,13 @@ export default function MasterDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: slug, title: name, status: 'Rascunho' })
       });
+      
+      if (res.ok) {
+        window.location.href = '/dashboard/' + slug;
+      } else {
+        alert('Erro ao criar pesquisa. Tente um nome diferente.');
+      }
+
       
       if (res.ok) {
         const newSurvey = await res.json();
@@ -90,18 +98,19 @@ export default function MasterDashboard() {
           </h1>
         </div>
         <nav className="flex-1 p-4 flex flex-col gap-2">
-          <Link href="/dashboard" className="flex items-center gap-3 bg-blue-600/20 text-blue-400 px-4 py-3 rounded-lg font-medium">
+          <button onClick={() => setActiveTab('surveys')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'surveys' ? 'bg-blue-600/20 text-blue-400 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800 font-medium'}`}>
             <LayoutDashboard size={20} /> Minhas Pesquisas
-          </Link>
-          <Link href="#" className="flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-3 rounded-lg font-medium transition-colors">
+            </button>
+          <button onClick={() => setActiveTab('config')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'config' ? 'bg-blue-600/20 text-blue-400 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800 font-medium'}`}>
             <Settings size={20} /> Configurações
-          </Link>
+            </button>
         </nav>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full p-4 sm:p-8">
-        <header className="flex justify-between items-center mb-8">
+        {activeTab === 'surveys' && (<>
+          <header className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Pesquisas de Satisfação</h1>
             <p className="text-gray-500 mt-1">Gerencie, crie ou duplique questionários para seus eventos.</p>
@@ -174,6 +183,16 @@ export default function MasterDashboard() {
              </div>
           )}
         </div>
+          </>)}
+          {activeTab === 'config' && (
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mt-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">Configurações do Sistema</h2>
+              <p className="text-gray-500 mb-6">Em breve você poderá gerenciar usuários e permissões de acesso aqui.</p>
+              <div className="p-6 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center">
+                <span className="text-blue-600 font-medium">Módulo de Autenticação em desenvolvimento.</span>
+              </div>
+            </div>
+          )}
       </main>
     </div>
   );

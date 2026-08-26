@@ -1,80 +1,97 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { surveyData, Section, Question } from '@/data/questions';
-import { CheckCircle2, ChevronRight, ChevronLeft, Send } from 'lucide-react';
-import Link from 'next/link';
+import { ChevronRight, ArrowLeft, Send, CheckCircle2 } from 'lucide-react';
+import { Section, Question } from '@/data/questions';
+import { use } from 'react';
 
-export default function SurveyPage() {
-  const params = useParams();
-  const slug = params?.slug || '';
-  const eventTitle = slug.includes('curitiba') ? 'ERFE Curitiba' : slug.includes('lideranca') ? 'Liderança Jovem 26' : 'Encontro Nacional da FE 2026';
+export default function SurveyPage({ params }: { params: Promise<{ slug: string }> | { slug: string } }) {
+  const resolvedParams = 'then' in params ? use(params) : params;
+  const slug = resolvedParams.slug;
   
-  const [surveyData, setSurveyData] = useState<any[]>([]);
+  const [surveyData, setSurveyData] = useState<Section[]>([]);
+  const [eventTitle, setEventTitle] = useState('Carregando...');
   const [isLoading, setIsLoading] = useState(true);
 
+  // Flattened questions with section metadata
+  const [flatQuestions, setFlatQuestions] = useState<(Question & { sectionId: number, sectionTitle: string })[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  
+  const [answers, setAnswers] = useState<Record<number, any>>({});
+  const [isFinished, setIsFinished] = useState(false);
+
   useEffect(() => {
-    fetch(`/api/surveys/${slug}`, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } })
-      .then(res => res.json())
+    fetch("/api/surveys/" + slug, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } })
+      .then(res => {
+        if (!res.ok) throw new Error('Not found');
+        return res.json();
+      })
       .then(data => {
         if (data.config) {
           setSurveyData(data.config);
+          setEventTitle(data.title || 'Pesquisa de Satisfação');
+          
+          // Flatten questions
+          const flat: typeof flatQuestions = [];
+          data.config.forEach((sec: Section) => {
+            sec.questions.forEach(q => {
+              flat.push({ ...q, sectionId: sec.id, sectionTitle: sec.title });
+            });
+          });
+          setFlatQuestions(flat);
         }
+        setIsLoading(false);
+      })
+      .catch(() => {
         setIsLoading(false);
       });
   }, [slug]);
 
-  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, any>>({});
-  const [isFinished, setIsFinished] = useState(false);
-
-
   if (isLoading) {
-    return <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-      <p>Carregando...</p>
-    </div>;
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+      </div>
+    );
   }
 
-  if (!surveyData || surveyData.length === 0) {
-    return <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white">
-      <p className="text-xl font-bold">Pesquisa no encontrada ou vazia.</p>
-    </div>;
+  if (flatQuestions.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-3xl p-8 text-center shadow-sm border border-gray-100">
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Pesquisa não encontrada ou vazia</h2>
+          <p className="text-gray-500">Este link pode estar incorreto ou a pesquisa ainda não tem perguntas.</p>
+        </div>
+      </div>
+    );
   }
-
-  const currentSection = surveyData[currentSectionIndex];
-  const isFirstSection = currentSectionIndex === 0;
-  const isLastSection = currentSectionIndex === surveyData.length - 1;
 
   const handleAnswerChange = (questionId: number, value: any) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
   };
 
   const handleNext = () => {
-    // Check conditional logic
-    let nextIndex = currentSectionIndex + 1;
-    
-    // Check if any question in the current section has a condition that matches the answer
-    for (const q of currentSection.questions) {
-      if (q.condition) {
-        const answer = answers[q.id];
-        if (answer === q.condition.valueToSkip) {
-          // Find the index of the target section
-          const targetIndex = surveyData.findIndex((s) => s.id === q.condition!.targetSectionId);
-          if (targetIndex !== -1) {
-            nextIndex = targetIndex;
-            break;
-          }
+    const currentQ = flatQuestions[currentQuestionIndex];
+    let nextIndex = currentQuestionIndex + 1;
+
+    // Check condition to skip
+    if (currentQ.condition) {
+      const answer = answers[currentQ.id];
+      if (answer === currentQ.condition.valueToSkip) {
+        // Find the first question of the target section
+        const targetQIndex = flatQuestions.findIndex(q => q.sectionId === currentQ.condition!.targetSectionId);
+        if (targetQIndex !== -1) {
+          nextIndex = targetQIndex;
         }
       }
     }
 
-    if (nextIndex < surveyData.length) {
-      setCurrentSectionIndex(nextIndex);
-      window.scrollTo(0, 0);
+    if (nextIndex < flatQuestions.length) {
+      setCurrentQuestionIndex(nextIndex);
     } else {
+      // Finished
       fetch(`/api/surveys/${slug}/responses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -86,13 +103,15 @@ export default function SurveyPage() {
   };
 
   const handlePrev = () => {
-    if (!isFirstSection) {
-      // In a real app with complex skips, going back can be tricky. 
-      // For simplicity, we just go to the immediate previous section or keep a history stack.
-      setCurrentSectionIndex((prev) => prev - 1);
-      window.scrollTo(0, 0);
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex((prev) => prev - 1);
     }
   };
+
+  const currentQ = flatQuestions[currentQuestionIndex];
+  const isFirstQuestion = currentQuestionIndex === 0;
+  const isLastQuestion = currentQuestionIndex === flatQuestions.length - 1;
+  const progressPercentage = Math.round((currentQuestionIndex / flatQuestions.length) * 100);
 
   const renderQuestion = (question: Question) => {
     const value = answers[question.id] || '';
@@ -105,13 +124,13 @@ export default function SurveyPage() {
               <label key={option} className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 hover:bg-blue-50 hover:border-blue-200 cursor-pointer transition-colors bg-white shadow-sm">
                 <input
                   type="radio"
-                  name={`q-${question.id}`}
+                  name={"q-" + question.id}
                   value={option}
                   checked={value === option}
                   onChange={() => handleAnswerChange(question.id, option)}
                   className="w-5 h-5 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-gray-700 text-lg">{option}</span>
+                <span className="text-gray-700 md:text-lg text-base">{option}</span>
               </label>
             ))}
           </div>
@@ -137,7 +156,7 @@ export default function SurveyPage() {
                     }}
                     className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
                   />
-                  <span className="text-gray-700 text-lg">{option}</span>
+                  <span className="text-gray-700 md:text-lg text-base">{option}</span>
                 </label>
               )
             })}
@@ -146,7 +165,7 @@ export default function SurveyPage() {
       case 'linear':
         return (
           <div className="mt-6 flex flex-col items-center">
-            <div className="flex w-full justify-between mb-2 text-sm text-gray-500 font-medium">
+            <div className="flex w-full justify-between mb-2 text-xs md:text-sm text-gray-500 font-medium">
               <span>{question.min} - {question.minLabel}</span>
               <span>{question.max} - {question.maxLabel}</span>
             </div>
@@ -159,7 +178,7 @@ export default function SurveyPage() {
                     key={num}
                     type="button"
                     onClick={() => handleAnswerChange(question.id, num)}
-                    className={`flex-1 py-3 sm:py-4 rounded-xl text-lg font-semibold transition-all ${
+                    className={`flex-1 py-3 md:py-4 rounded-xl md:text-lg text-base font-semibold transition-all ${
                       isSelected
                         ? 'bg-blue-600 text-white shadow-md transform scale-105'
                         : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300'
@@ -179,8 +198,8 @@ export default function SurveyPage() {
               value={value}
               onChange={(e) => handleAnswerChange(question.id, e.target.value)}
               placeholder="Sua resposta..."
-              rows={4}
-              className="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm resize-none text-lg"
+              rows={5}
+              className="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm resize-none md:text-lg text-base"
             />
           </div>
         );
@@ -202,25 +221,22 @@ export default function SurveyPage() {
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Muito obrigado!</h2>
           <p className="text-gray-600 mb-8 leading-relaxed">
-            Cada resposta será considerada com atenção e nos ajudará a construir as próximas edições do {eventTitle}.
-            Esperamos encontrar você novamente em breve! 🙏
+            Sua resposta foi registrada com sucesso. Agradecemos sua colaboração!
           </p>
         </motion.div>
       </div>
     );
   }
 
-  const progressPercentage = Math.round(((currentSectionIndex) / surveyData.length) * 100);
-
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-24">
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-24 flex flex-col">
       {/* Header */}
-      <header className="bg-white sticky top-0 z-10 shadow-sm">
+      <header className="bg-white sticky top-0 z-10 shadow-sm border-b border-gray-100">
         <div className="max-w-3xl mx-auto px-4 py-4 flex flex-col gap-3">
           <div className="flex justify-between items-center">
-            <h1 className="font-bold text-xl text-blue-900 truncate">{eventTitle}</h1>
-            <span className="text-sm font-semibold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-              {currentSectionIndex + 1} de {surveyData.length}
+            <h1 className="font-bold md:text-xl text-lg text-blue-900 truncate">{eventTitle}</h1>
+            <span className="text-xs md:text-sm font-semibold text-gray-500 bg-gray-100 px-3 py-1 rounded-full whitespace-nowrap">
+              {progressPercentage}% concluído
             </span>
           </div>
           {/* Progress bar */}
@@ -228,7 +244,7 @@ export default function SurveyPage() {
             <motion.div 
               className="h-full bg-blue-600"
               initial={{ width: 0 }}
-              animate={{ width: `${progressPercentage}%` }}
+              animate={{ width: progressPercentage + "%" }}
               transition={{ duration: 0.3 }}
             />
           </div>
@@ -236,72 +252,65 @@ export default function SurveyPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-3xl mx-auto px-4 py-8">
+      <main className="max-w-3xl mx-auto px-4 py-8 flex-1 w-full flex flex-col justify-center">
         
-        {isFirstSection && (
-          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 mb-8">
-            <h2 className="text-2xl font-bold text-blue-900 mb-2">Bem-vindo(a)!</h2>
-            <p className="text-blue-800/80">
-              Sua avaliação é muito importante para entendermos o que funcionou bem e o que podemos melhorar.
-              A pesquisa leva cerca de <strong>5 minutos</strong> e é totalmente <strong>anônima</strong>. Seja sincero(a)!
-            </p>
-          </div>
-        )}
-
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentSectionIndex}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+            key={currentQuestionIndex}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
+            className="w-full"
           >
-            <div className="mb-8">
-              <h2 className="text-3xl font-extrabold text-gray-800 mb-2">{currentSection.title}</h2>
-              {currentSection.description && (
-                <p className="text-gray-500 text-lg">{currentSection.description}</p>
-              )}
+            <div className="mb-4">
+              <span className="text-blue-600 font-bold text-xs md:text-sm uppercase tracking-wider">{currentQ.sectionTitle}</span>
             </div>
+            
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 leading-tight">
+              {currentQ.text}
+            </h2>
 
-            <div className="space-y-10">
-              {currentSection.questions.map((question) => (
-                <div key={question.id} className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100">
-                  <h3 className="text-xl font-bold text-gray-800 mb-1">
-                    {question.text}
-                  </h3>
-                  {renderQuestion(question)}
-                </div>
-              ))}
+            {renderQuestion(currentQ)}
+
+            {/* Navigation Buttons */}
+            <div className="flex gap-4 mt-12">
+              <button
+                onClick={handlePrev}
+                disabled={isFirstQuestion}
+                className={`flex-1 py-4 md:text-lg text-base font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm border ${
+                  isFirstQuestion 
+                    ? 'bg-gray-100 text-gray-400 border-transparent cursor-not-allowed' 
+                    : 'bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 border-gray-200'
+                }`}
+              >
+                <ArrowLeft size={20} />
+                Voltar
+              </button>
+              
+              <button
+                onClick={handleNext}
+                disabled={currentQ.type !== 'paragraph' && !answers[currentQ.id]}
+                className={`flex-[2] py-4 md:text-lg text-base text-white flex items-center justify-center gap-2 rounded-xl font-bold transition-all shadow-md ${
+                  (currentQ.type !== 'paragraph' && !answers[currentQ.id])
+                    ? 'bg-blue-300 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
+                }`}
+              >
+                {isLastQuestion ? (
+                  <>Enviar <Send size={20} /></>
+                ) : (
+                  <>Próximo <ChevronRight size={20} /></>
+                )}
+              </button>
             </div>
           </motion.div>
         </AnimatePresence>
-      </main>
 
-      {/* Footer Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
-        <div className="max-w-3xl mx-auto flex gap-4">
-          <button
-            onClick={handlePrev}
-            disabled={isFirstSection}
-            className={`flex-1 py-4 flex items-center justify-center gap-2 rounded-xl font-bold transition-all ${
-              isFirstSection ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            <ChevronLeft size={20} />
-            Voltar
-          </button>
-          <button
-            onClick={handleNext}
-            className="flex-[2] py-4 bg-blue-600 text-white flex items-center justify-center gap-2 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-md hover:shadow-lg"
-          >
-            {isLastSection ? (
-              <>Enviar <Send size={20} /></>
-            ) : (
-              <>Próximo <ChevronRight size={20} /></>
-            )}
-          </button>
-        </div>
-      </div>
+      </main>
     </div>
   );
 }
+
+
+
