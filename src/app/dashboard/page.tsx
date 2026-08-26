@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, Plus, Copy, BarChart2, MoreVertical, Search, Settings, Users } from 'lucide-react';
+import { LayoutDashboard, Plus, Copy, BarChart2, Search, Settings, Users, Trash2, Power } from 'lucide-react';
 
 // Mock list of surveys
 const initialSurveys = [
@@ -164,9 +164,7 @@ export default function MasterDashboard() {
                 >
                   <BarChart2 size={18} /> Ver Dashboard
                 </Link>
-                <button className="p-2 text-gray-400 hover:text-gray-600">
-                  <MoreVertical size={20} />
-                </button>
+                <button onClick={() => handleToggleStatus(survey)} className={`p-2.5 rounded-lg transition-colors border border-transparent ${survey.status === 'Ativa' ? 'text-yellow-600 hover:bg-yellow-50' : 'text-green-600 hover:bg-green-50'}`} title={survey.status === 'Ativa' ? 'Pausar Recebimento' : 'Ativar Recebimento'}><Power size={20} /></button><button onClick={() => handleDelete(survey.id)} className="p-2.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-transparent" title="Excluir Pesquisa"><Trash2 size={20} /></button>
               </div>
             </div>
           ))}
@@ -180,4 +178,6 @@ export default function MasterDashboard() {
     </div>
   );
 }
+
+
 
