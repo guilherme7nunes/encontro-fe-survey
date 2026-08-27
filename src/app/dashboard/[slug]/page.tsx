@@ -157,25 +157,17 @@ export default function DashboardPage() {
   const [currentSectionId, setCurrentSectionId] = useState<number | null>(null);
 
   const handleSaveQuestion = () => {
-    // Basic mock implementation for saving a question
     setIsModalOpen(false);
     
-    // Create mock new question
-    const newQuestion = {
-      id: Date.now(),
-      text: 'Nova pergunta adicionada...',
-      type: 'paragraph',
-    };
-
     setSectionsList(prev => {
       const newSections = prev.map(section => {
       if (section.id === currentSectionId) {
         // If editing existing
         if (currentQuestion) {
-           return { ...section, questions: section.questions.map(q => q.id === currentQuestion.id ? { ...q, text: 'Pergunta editada...' } : q) };
+           return { ...section, questions: section.questions.map(q => q.id === currentQuestion.id ? editingQ : q) };
         }
         // If adding new
-        return { ...section, questions: [...section.questions, newQuestion] };
+        return { ...section, questions: [...section.questions, editingQ] };
       }
       return section;
       });
@@ -297,8 +289,8 @@ export default function DashboardPage() {
                   <h3 className="text-xl font-bold text-gray-800">Construtor de Pesquisa</h3>
                   <p className="text-gray-500 mt-1">Adicione, edite ou remova as perguntas deste questionário.</p>
                 </div>
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold transition-colors flex items-center gap-2 shadow-sm">
-                  <Plus size={20} /> Nova Pergunta
+                <button onClick={handleAddTopic} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold transition-colors flex items-center gap-2 shadow-sm">
+                  <Plus size={20} /> Novo Tópico
                 </button>
               </div>
 
