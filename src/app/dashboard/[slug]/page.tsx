@@ -447,7 +447,7 @@ export default function DashboardPage() {
               return <div className="bg-white p-8 rounded-2xl border text-center text-gray-500">Nenhuma pergunta aberta configurada nesta pesquisa.</div>;
             }
             const activeId = selectedQuestionId || textQuestions[0]?.id;
-            const activeQ = textQuestions.find(q => q.id === activeId);
+            const activeQ = textQuestions.find(q => String(q.id) === String(activeId));
             const answers = responsesData.filter(r => r.answers && r.answers[activeId]).map(r => ({ id: r.id.substring(0, 8), text: r.answers[activeId] }));
 
             return (
