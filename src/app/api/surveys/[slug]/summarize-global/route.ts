@@ -82,12 +82,7 @@ INSTRUÇÕES DE FORMATAÇÃO E CONTEÚDO:
     let summary = '';
     let lastError = null;
 
-    const modelsToTry = [
-        "gemini-3.0-flash",
-        "gemini-3-flash-preview",
-        "gemini-flash-latest",
-        "gemini-2.5-flash",
-    ];
+    const modelsToTry = ["gemini-flash-latest"];
 
     for (const modelName of modelsToTry) {
         try {
