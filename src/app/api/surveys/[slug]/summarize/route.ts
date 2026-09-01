@@ -44,7 +44,7 @@ Responda em formato Markdown (usando **negrito** e listas, sem usar cabeçalhos 
   } catch (error: any) {
     console.error('Error generating summary:', error);
     return NextResponse.json(
-      { error: 'Erro ao gerar o resumo com a IA. Tente novamente mais tarde.' }, 
+      { error: 'Erro da API do Google: ' + (error.message || String(error)) }, 
       { status: 500 }
     );
   }
