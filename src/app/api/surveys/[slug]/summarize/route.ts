@@ -20,8 +20,7 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
+    
     const prompt = `Você é um analista de pesquisa especializado em resumir feedbacks.
 Aqui estão as respostas abertas para a seguinte pergunta de uma pesquisa de satisfação de um evento:
 
@@ -37,8 +36,25 @@ Por favor, faça um resumo claro, conciso e profissional destas respostas. Desta
 
 Responda em formato Markdown (usando **negrito** e listas, sem usar cabeçalhos gigantes).`;
 
-    const result = await model.generateContent(prompt);
-    const summary = result.response.text();
+    let summary = '';
+    
+    try {
+        // Try Gemini 1.5 Flash first
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const result = await model.generateContent(prompt);
+        summary = result.response.text();
+    } catch (e1: any) {
+        console.warn('Falha com gemini-1.5-flash, tentando gemini-pro...', e1.message);
+        try {
+            // Fallback to Gemini 1.0 Pro
+            const fallbackModel = genAI.getGenerativeModel({ model: "gemini-pro" });
+            const result = await fallbackModel.generateContent(prompt);
+            summary = result.response.text();
+        } catch (e2: any) {
+            console.error('Falha com gemini-pro também.', e2);
+            throw e2; // Bubble up the second error
+        }
+    }
 
     return NextResponse.json({ summary });
   } catch (error: any) {
