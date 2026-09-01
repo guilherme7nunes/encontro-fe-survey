@@ -20,8 +20,7 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
+    
     const prompt = `Você é um analista de pesquisa especializado em resumir feedbacks.
 Aqui estão as respostas abertas para a seguinte pergunta de uma pesquisa de satisfação de um evento:
 
@@ -37,8 +36,32 @@ Por favor, faça um resumo claro, conciso e profissional destas respostas. Desta
 
 Responda em formato Markdown (usando **negrito** e listas, sem usar cabeçalhos gigantes).`;
 
-    const result = await model.generateContent(prompt);
-    const summary = result.response.text();
+    let summary = '';
+    let lastError = null;
+
+    // Tentar na ordem recomendada pela API do Google
+    const modelsToTry = [
+        "gemini-3.0-flash",
+        "gemini-3-flash-preview",
+        "gemini-flash-latest",
+        "gemini-2.5-flash",
+    ];
+
+    for (const modelName of modelsToTry) {
+        try {
+            const model = genAI.getGenerativeModel({ model: modelName });
+            const result = await model.generateContent(prompt);
+            summary = result.response.text();
+            break; // Parar o loop se funcionar
+        } catch (e: any) {
+            console.warn(`Falha ao tentar modelo ${modelName}:`, e.message);
+            lastError = e;
+        }
+    }
+
+    if (!summary) {
+        throw new Error(lastError?.message || 'Nenhum modelo funcionou.');
+    }
 
     return NextResponse.json({ summary });
   } catch (error: any) {
