@@ -39,20 +39,27 @@ Responda em formato Markdown (usando **negrito** e listas, sem usar cabeçalhos 
     let summary = '';
     
     try {
-        // Try Gemini 1.5 Flash first
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const result = await model.generateContent(prompt);
         summary = result.response.text();
     } catch (e1: any) {
-        console.warn('Falha com gemini-1.5-flash, tentando gemini-pro...', e1.message);
         try {
-            // Fallback to Gemini 1.0 Pro
             const fallbackModel = genAI.getGenerativeModel({ model: "gemini-pro" });
             const result = await fallbackModel.generateContent(prompt);
             summary = result.response.text();
         } catch (e2: any) {
-            console.error('Falha com gemini-pro também.', e2);
-            throw e2; // Bubble up the second error
+            // Fetch the list of available models to help debug
+            try {
+                const listRes = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' + apiKey);
+                const listData = await listRes.json();
+                const availableModels = listData.models 
+                    ? listData.models.map((m: any) => m.name.replace('models/', '')).filter((n: string) => n.includes('gemini')).join(', ')
+                    : 'Nenhum modelo disponível';
+                    
+                throw new Error(\`Modelos permitidos para esta chave: \${availableModels}\`);
+            } catch (listError) {
+                throw e2; 
+            }
         }
     }
 
@@ -60,7 +67,7 @@ Responda em formato Markdown (usando **negrito** e listas, sem usar cabeçalhos 
   } catch (error: any) {
     console.error('Error generating summary:', error);
     return NextResponse.json(
-      { error: 'Erro da API do Google: ' + (error.message || String(error)) }, 
+      { error: 'Erro Gemini: ' + (error.message || String(error)) }, 
       { status: 500 }
     );
   }
