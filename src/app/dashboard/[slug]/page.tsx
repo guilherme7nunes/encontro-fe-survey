@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { surveyData } from '../../../data/questions';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  PieChart, Pie, Cell
+  PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { ArrowLeft, Users, Star, ArrowUpRight, Clock, MessageSquare, Menu, LayoutDashboard, CheckSquare, List, MessageCircleQuestion, Sparkles, Printer, FileDown, Settings, Edit, Trash2, Plus, GripVertical, Power } from 'lucide-react';
 import Link from 'next/link';
@@ -47,7 +47,7 @@ export default function DashboardPage() {
         {sectionsList.map((section) => (
           <div key={section.id} className="mb-10">
             <h2 className="text-2xl font-bold text-gray-800 border-b pb-2 mb-6">{section.title}</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {section.questions.map((q) => {
                 if (q.type === 'paragraph') return null;
                 let chartData = [];
@@ -85,19 +85,42 @@ export default function DashboardPage() {
                 return (
                   <div key={q.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                     <h3 className="text-lg font-bold text-gray-800 mb-6">{q.text}</h3>
-                    <div className="h-72 w-full">
+                    <div className="h-64 w-full">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                          <XAxis dataKey="name" tick={{fill: '#64748b', fontSize: 12}} axisLine={false} tickLine={false} />
-                          <YAxis tick={{fill: '#64748b', fontSize: 12}} axisLine={false} tickLine={false} allowDecimals={false} />
-                          <RechartsTooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                          <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                            {chartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Bar>
-                        </BarChart>
+                        
+                          {q.type === 'radio' ? (
+                            <PieChart>
+                              <Pie
+                                data={chartData}
+                                cx="50%"
+                                cy="50%"
+                                labelLine={false}
+                                label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                                outerRadius={80}
+                                fill="#8884d8"
+                                dataKey="count"
+                              >
+                                {chartData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <RechartsTooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                              <Legend wrapperStyle={{fontSize: '12px'}} />
+                            </PieChart>
+                          ) : (
+                            <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                              <XAxis dataKey="name" tick={{fill: '#64748b', fontSize: 12}} axisLine={false} tickLine={false} />
+                              <YAxis tick={{fill: '#64748b', fontSize: 12}} axisLine={false} tickLine={false} allowDecimals={false} />
+                              <RechartsTooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                                {chartData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          )}
+
                       </ResponsiveContainer>
                     </div>
                   </div>
@@ -116,6 +139,32 @@ export default function DashboardPage() {
   const [responsesData, setResponsesData] = useState<any[]>([]);
   const [surveyMeta, setSurveyMeta] = useState<any>({ title: 'Painel ENF 26' });
   const [isLoading, setIsLoading] = useState(true);
+  
+  const handleGenerateGlobalSummary = async () => {
+    try {
+      setIsGeneratingGlobalAi(true);
+      const res = await fetch(`/api/surveys/${params.slug}/summarize-global`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          surveyTitle: surveyMeta.title,
+          sectionsList: sectionsList,
+          responsesData: responsesData
+        })
+      });
+      const data = await res.json();
+      if (data.summary) {
+        setGlobalAiSummary(data.summary);
+      } else if (data.error) {
+        alert(data.error);
+      }
+    } catch (e: any) {
+      alert('Erro ao gerar resumo global.');
+    } finally {
+      setIsGeneratingGlobalAi(false);
+    }
+  };
+
   const handleClearResponses = async () => {
     if (confirm('ATENÇÃO: Isso apagará TODAS as respostas desta pesquisa permanentemente. Tem certeza?')) {
       await fetch(`/api/surveys/${params.slug}/responses/clear`, { method: 'DELETE' });
@@ -158,6 +207,8 @@ export default function DashboardPage() {
   const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [aiSummaryMap, setAiSummaryMap] = useState<{[key: string]: string}>({});
+  const [globalAiSummary, setGlobalAiSummary] = useState<string | null>(null);
+  const [isGeneratingGlobalAi, setIsGeneratingGlobalAi] = useState(false);
   
   const handleGenerateAiSummary = async (questionId: string, questionText: string, textAnswers: any[]) => {
     if (textAnswers.length === 0) return;
@@ -548,12 +599,37 @@ export default function DashboardPage() {
             );
           })()}
           {activeTab === 'actions' && (
-            <div className="bg-white p-12 rounded-2xl border border-gray-100 text-center flex flex-col items-center justify-center">
-              <Sparkles size={48} className="text-blue-300 mb-4" />
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Plano de Ação Inteligente em Breve</h3>
-              <p className="text-gray-500 max-w-md mx-auto">
-                Assim que recebermos um volume suficiente de respostas reais, nossa Inteligência Artificial irá analisar os dados e gerar um plano de ação focado automaticamente.
-              </p>
+            <div>
+              
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 sm:p-8 rounded-2xl border border-blue-100 mb-8 shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-blue-900 flex items-center gap-2">
+                  <Sparkles size={24} className="text-blue-600" />
+                  Plano de Ação Inteligente (IA)
+                </h3>
+                <p className="text-blue-700 text-sm mt-1">Análise executiva de {responsesData.length} respostas.</p>
+              </div>
+              <button 
+                onClick={handleGenerateGlobalSummary}
+                disabled={isGeneratingGlobalAi || responsesData.length === 0}
+                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-bold transition-colors shadow-sm flex items-center gap-2 whitespace-nowrap"
+              >
+                {isGeneratingGlobalAi ? 'Analisando dados...' : 'Gerar Relatório'}
+              </button>
+            </div>
+            
+            {globalAiSummary ? (
+              <div className="prose prose-blue max-w-none text-gray-800 font-medium whitespace-pre-wrap bg-white p-6 rounded-xl shadow-sm border border-blue-100/50">
+                <div dangerouslySetInnerHTML={{ __html: globalAiSummary.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\*(.*?)\*/g, '<i>$1</i>').replace(/\n/g, '<br/>') }}></div>
+              </div>
+            ) : (
+              <div className="bg-white/60 p-8 rounded-xl border border-blue-100/50 text-center text-blue-800/60">
+                Clique no botão acima para que a IA gere um relatório executivo cruzando todos os dados qualitativos e quantitativos desta pesquisa.
+              </div>
+            )}
+          </div>
+
             </div>
           )}
           {activeTab === 'responses' && (<>
