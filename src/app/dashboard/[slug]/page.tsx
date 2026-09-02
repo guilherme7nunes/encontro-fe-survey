@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import { ArrowLeft, Users, Star, ArrowUpRight, Clock, MessageSquare, Menu, LayoutDashboard, CheckSquare, List, MessageCircleQuestion, Sparkles, Printer, FileDown, Settings, Edit, Trash2, Plus, GripVertical, Power } from 'lucide-react';
 import Link from 'next/link';
+import { marked } from 'marked';
 
 // Mock data removed
 
@@ -620,8 +621,8 @@ export default function DashboardPage() {
             </div>
             
             {globalAiSummary ? (
-              <div className="prose prose-blue max-w-none text-gray-800 font-medium whitespace-pre-wrap bg-white p-6 rounded-xl shadow-sm border border-blue-100/50">
-                <div dangerouslySetInnerHTML={{ __html: globalAiSummary.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\*(.*?)\*/g, '<i>$1</i>').replace(/\n/g, '<br/>') }}></div>
+              <div className="markdown-report max-w-none bg-white p-6 sm:p-10 rounded-xl shadow-sm border border-blue-100/50">
+                <div dangerouslySetInnerHTML={{ __html: marked.parse(globalAiSummary) as string }}></div>
               </div>
             ) : (
               <div className="bg-white/60 p-8 rounded-xl border border-blue-100/50 text-center text-blue-800/60">

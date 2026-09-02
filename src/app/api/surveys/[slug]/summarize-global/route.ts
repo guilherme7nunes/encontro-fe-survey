@@ -21,7 +21,6 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
 
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // Preparar os dados para a IA de forma resumida para economizar tokens
     let surveyContext = `Título do Evento/Pesquisa: ${surveyTitle}\nTotal de Respostas: ${responsesData.length}\n\nPerguntas e Resumos Quantitativos:\n`;
 
     sectionsList.forEach((section: any, sIdx: number) => {
@@ -30,8 +29,6 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
             surveyContext += `\nPergunta ${sIdx + 1}.${qIdx + 1}: ${q.text}\n`;
             
             if (q.type === 'paragraph') {
-                // Selecionar até 25 amostras de respostas textuais para não estourar o limite, 
-                // e para focar nos padrões gerais
                 const textAnswers = responsesData
                     .map((res: any) => res.answers && res.answers[q.id])
                     .filter(Boolean);
@@ -60,23 +57,43 @@ export async function POST(request: Request, context: { params: Promise<{ slug: 
         });
     });
 
-    const prompt = `Você é um Consultor Estratégico Especialista em Eventos corporativos e associativos.
+    const prompt = `Você é um Consultor Estratégico Sênior Especialista em Eventos corporativos e associativos.
 Abaixo estão os dados agregados da pesquisa de satisfação "${surveyTitle}".
 
 DADOS DA PESQUISA:
 ${surveyContext}
 
 OBJETIVO:
-Gere um "Relatório Executivo e Plano de Ação" para a diretoria, analisando esses resultados. O relatório será exibido no dashboard de análise.
+Gere um "Relatório Executivo e Plano de Ação" altamente detalhado e estruturado para a diretoria, com base exclusivamente nos dados fornecidos.
 
-INSTRUÇÕES DE FORMATAÇÃO E CONTEÚDO:
-- Use Markdown.
-- Comece com uma visão geral (Resumo Executivo) de 1 ou 2 parágrafos.
-- Em seguida, crie uma seção de "Pontos Fortes" (o que deu certo).
-- Depois, "Pontos de Atenção / Melhorias" (as principais dores ou reclamações).
-- Conclua com um "Plano de Ação" com 3 a 5 passos claros e práticos para o próximo evento.
-- Seja direto, profissional, claro e objetivo. Evite textos enchedos de linguiça.
-- NÃO use títulos H1 (#). Use no máximo H2 (##) ou H3 (###) para as seções.
+INSTRUÇÕES DE FORMATAÇÃO (USE MARKDOWN RIGOROSAMENTE):
+O relatório DEVE conter EXATAMENTE as seguintes seções, usando os mesmos títulos (com ## para títulos principais e ### para subtítulos):
+
+## 1. Resumo executivo
+(Escreva 2 ou 3 parágrafos profissionais resumindo os pontos mais importantes, a nota geral emocional e os principais sucessos e gargalos).
+
+## 2. Decisões recomendadas
+(Crie uma tabela Markdown com até 5 decisões cruciais para o próximo evento. Colunas obrigatórias EXATAS: | # | Decisão | Problema que resolve |)
+
+## 3. Análise das respostas abertas
+(Agrupe as respostas em até 6 eixos temáticos relevantes, baseados nas seções da pesquisa. Para cada eixo, crie um subtítulo ### Nome do Eixo e use duas listas de bullet points exatas:
+**O que funcionou e deve ser mantido:**
+- Ponto 1
+- Ponto 2
+
+**O que precisa mudar:**
+- Ponto 1
+- Ponto 2)
+
+## 4. Plano de ação para a próxima edição
+(Crie uma tabela Markdown detalhada com as ações práticas baseadas nas melhorias. Colunas obrigatórias EXATAS: | Prioridade (Alta/Média/Baixa) | Ação | O que fazer |)
+
+## 5. Conclusão
+(Um parágrafo de fechamento inspirador, focado na transição operacional e consolidação do sucesso).
+
+Tom de voz: Corporativo, analítico, focado em soluções (orientado a dados).
+NÃO invente dados. Se não houver dados para um eixo específico, não o mencione.
+USE APENAS MARKDOWN VÁLIDO.
 `;
 
     let summary = '';
